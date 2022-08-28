@@ -31,3 +31,4 @@ Gather enough Shards of Death to slay the Divider.
 
 ## Acknowledgements
 * [Benjamin Brown](https://github.com/benjamin-t-brown)
+* [JS13k resources](https://js13kgames.github.io/resources/)
