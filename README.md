@@ -1,4 +1,4 @@
-# js13k-2022 Perennial Blade
+# js13k-2022: Perennial Blade
 Theme: death
 
 ## The Player Actor can...
@@ -6,6 +6,7 @@ Theme: death
 * Deflect: divert an enemy's attack, stunning them for a long period.
 * Strike: deals damage equivalent to held Shards of Death but cancels stun.
 * Jump: be an Italian plumber, then a robot ninja.
+* Dash: move like the wind.
 
 ## Mechanics
 ### Combo
@@ -17,3 +18,6 @@ Theme: death
 * Striking without any Shards of Death will prompt an immediate counter.
 * The more Shards of Death one holds, the more damage they will deal and take.
 * While holding Shards of Death, a countdown to death will occur.
+
+## Acknowledgements
+* [Benjamin Brown](https://github.com/benjamin-t-brown)
