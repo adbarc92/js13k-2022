@@ -1,5 +1,4 @@
 # js13k-2022: Perennial Blade
-Theme: death \n
 Gather enough Shards of Death to slay the Divider.
 
 ## The Player Actor can...
