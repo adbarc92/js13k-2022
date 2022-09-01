@@ -1,63 +1,49 @@
-import { Ai, AttackingHighlightRender, Bashing, Comboable, Dashing, Deflecting, Fighter, HitHighlightRender, HitPoints, Jumping, LimitedLifetime, PhysicsBody, Player, Renderable, Shardable, Striking, Stunnable, Ui } from "./components";
+const { PhysicsBody } = require('./components.js');
 
-let uiId = '';
-let playerFighterId = '';
+function Input(ecs) {
+  const selector = ecs.select(Player, PhysicsBody, HitPoints);
+}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function CameraMover(ecs) {
+  const selector = ecs.select(Camera, Ship, PhysicsBody);
+
+  /** @param {Entity} entity */
+  const iterate = (entity) => {
+    /** @type {Camera} */
+    const camera = entity.get(Camera);
+    /** @type {PhysicsBody} */
+    const physics = entity.get(PhysicsBody);
+
+    camera.x = physics.x - camera.w / 2;
+    camera.y = physics.y - camera.h / 2;
+
+    const minSize = (-16 * TILE_SCALE) / 2;
+    const maxW = WORLD_WIDTH - (16 * TILE_SCALE) / 2;
+    const maxH = WORLD_HEIGHT - (16 * TILE_SCALE) / 2;
+
+    if (camera.x < minSize) {
+      camera.x = minSize;
+    }
+    if (camera.x + camera.w > maxW) {
+      camera.x = maxW - camera.w;git
+    }
+    if (camera.y < minSize) {
+      camera.y = minSize;
+    }
+    if (camera.y + camera.h > maxH) {
+      camera.y = maxH - camera.h;
+    }
+
+    camera.x = Math.floor(camera.x);
+    camera.y = Math.round(camera.y);
+  };
+
+  createSystem.bind(this)(selector, iterate);
+}
 
 
-export const createPlayer = (ecs) => {
-  const player = new Player();
-  const fighter = new Fighter();
 
-  const ent = ecs.create(
-    new Player(),
-    new Fighter(SCREEN_WIDTH/2, SCREEN_HEIGHT/2),
-    new PhysicsBody(),
-    new Stunnable(),
-    new Jumping(),
-    new Bashing(),
-    new Dashing(),
-    new Deflecting(),
-    new Striking(),
-    new Shardable(),
-    new Comboable(),
-    new Renderable(),
-    new Ai(),
-    new HitHighlightRender(),
-    new HitPoints(20),
-  );
-
-};
-
-export const createEnemyFighter = (ecs) => {
-  const physics = new PhysicsBody();
-
-  const ent = ecs.create();
-
-  ent.add(
-    new PhysicsBody(),
-    new Stunnable(),
-    new Jumping(),
-    new Bashing(),
-    new Dashing(),
-    new Deflecting(),
-    new Striking(),
-    new Shardable(),
-    new Comboable(),
-    new Renderable(),
-    new LimitedLifetime(),
-    new Ai(),
-    new HitHighlightRender(),
-    new AttackingHighlightRender(),
-    new HitPoints(5),
-  );
-};
-
-export const createUi = (ecs) => {
-  const ent = ecs.create();
-  ent.add(new Ui());
-  uiId = ent.id;
-};
-
-export const newGame = (ecs) => {
-
-};
+function Deflect() {
+  const player = ecs.select(Player, PhysicsBody)
+}
