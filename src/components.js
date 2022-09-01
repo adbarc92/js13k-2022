@@ -103,8 +103,16 @@ export class Camera {
 
 export class HitHighlightRender {
   /** */
-  constructor() {
-    this.sprTimer = new utils.Timer(100);
+  constructor(duration) {
+    this.sprTimer = new utils.Timer(duration);
+    this.sprTimer.timestampStart = 0;
+  }
+}
+
+export class AttackingHighlightRender {
+  /** */
+  constructor(duration) {
+    this.sprTimer = new utils.Timer(duration);
     this.sprTimer.timestampStart = 0;
   }
 }
@@ -121,11 +129,21 @@ export class Projectile {
 }
 
 export class HitPoints {
-  maxHp = 1;
-  hp = 1;
+  constructor(maxHp) {
+    this.maxHp = this.hp = maxHp;
+  }
 }
 
 export class HitBody {}
+
+export class Fighter {
+  constructor(x, y) {
+    this.sprites = {};
+    this.x = 0;
+    this.y = 0;
+    this.scale = scale ?? 1;
+  }
+};
 
 export class Ui {}
 
@@ -135,6 +153,7 @@ export const get = () => {
     Stunnable,
     Jumping,
     Bashing,
+    Dashing,
     Deflecting,
     Striking,
     Shardable,
@@ -142,13 +161,13 @@ export const get = () => {
     Renderable,
     LimitedLifetime,
     Player,
-    Move,
     Ai,
     Camera,
-    HitHighlightRender,
+    HighlightRender,
     Projectile,
     HitPoints,
     HitBody,
+    Fighter,
     Ui,
   ];
 };
