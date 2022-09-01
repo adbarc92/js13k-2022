@@ -59,10 +59,5 @@ export const createUi = (ecs) => {
 };
 
 export const newGame = (ecs) => {
-  ecs.reset();
-
-  createPlayer(ecs);
 
 };
-
-function EnemyFighterSpawner() {}
