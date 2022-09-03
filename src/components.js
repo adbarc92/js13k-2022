@@ -7,6 +7,7 @@ export class PhysicsBody {
   mass = 1;
   acc = false;
   accRate = 0.3;
+  facingLeft = true;
 }
 
 export class Stunnable {
@@ -15,8 +16,8 @@ export class Stunnable {
 }
 
 export class Jumping {
-  inAir: false;
-  canDoubleJump: false;
+  isJumping: false;
+  // canDoubleJump: false;
   hasDoubleJumped: false;
 }
 
@@ -93,7 +94,9 @@ export class Player {
     }
 }
 
-export class Ai {}
+export class Ai {
+  
+}
 
 export class Camera {
   x = 0;

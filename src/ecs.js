@@ -1,3 +1,10 @@
+
+/**
+ * @typedef {object} Entity
+ * @propery {number} [id]
+ * @property {object} [components]
+ * @property {number | null} [mask]
+*/
 const selectors = [];
 const systems = [];
 const entities = {};

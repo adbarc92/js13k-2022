@@ -1,7 +1,12 @@
 import { Ai, AttackingHighlightRender, Bashing, Comboable, Dashing, Deflecting, Fighter, HitHighlightRender, HitPoints, Jumping, LimitedLifetime, PhysicsBody, Player, Renderable, Shardable, Striking, Stunnable, Ui } from "./components";
 
 let uiId = '';
+export const getUiEntity = (ecs) => ecs.get(uiId);
 let playerFighterId = '';
+export const getPlayerEntity = (ecs) => ecs.get(playerFighterId);
+export const isPlayerEntity = (entity) => entity.id === playerFighterId;
+let swarmId = '';
+export const getUiEntity = (ecs) => ecs.get(swarmId);
 
 
 export const createPlayer = (ecs) => {
