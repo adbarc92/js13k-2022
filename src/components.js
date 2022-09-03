@@ -48,7 +48,8 @@ export class Striking {
 export class Shardable {
   hasShards = false;
   shardCount = 0;
-  timeToLive = 300;
+  timeToLive = 3000;
+  timeToNextShard = 250;
 }
 
 export class Comboable {
