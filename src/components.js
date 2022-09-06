@@ -1,3 +1,4 @@
+import { Timer } from './utils';
 
 export class PhysicsBody {
   vx = 0;
@@ -12,38 +13,57 @@ export class PhysicsBody {
 
 export class Stunnable {
   isStunned: false;
-  duration: 500;
+
+  constructor(duration) {
+    this.cooldown = new utils.Timer(duration || 500)
+  }
 }
 
 export class Jumping {
+  intendsToJump: false;
   isJumping: false;
-  // canDoubleJump: false;
   hasDoubleJumped: false;
 }
 
 export class Bashing {
+  intendsToBash: false;
   hasBashed: false;
   isBashing: false;
-  cooldown: 500;
+
+  constructor(duration) {
+    this.cooldown = new utils.Timer(duration || 500)
+  }
 }
 
 export class Dashing {
+  intendsToDash: false;
   distance: 0;
   canDash: false;
   isDashing: false;
-  cooldown: 750;
+
+  constructor(duration) {
+    this.cooldown = new utils.Timer(duration || 750)
+  }
 }
 
 export class Deflecting {
+  intendsToDeflect: false;
   canDeflect: false;
   isDeflecting: false;
-  cooldown: 250;
+
+  constructor(duration) {
+    this.cooldown = new utils.Timer(duration || 250)
+  }
 }
 
 export class Striking {
+  intendsToStrike: false;
   canStrike: false;
   isStriking: false;
-  cooldown: 500;
+
+  constructor(duration) {
+    this.cooldown = new utils.Timer(duration || 500)
+  }
 }
 
 export class Shardable {
@@ -51,6 +71,11 @@ export class Shardable {
   shardCount = 0;
   timeToLive = 3000;
   timeToNextShard = 250;
+
+  constructor(duration) {
+    this.timeToLive = new utils.Timer(duration || 3000)
+    this.timeToNextShard = new utils.Timer(duration || 250)
+  }
 }
 
 export class Comboable {
@@ -95,7 +120,7 @@ export class Player {
 }
 
 export class Ai {
-  
+
 }
 
 export class Camera {
@@ -109,7 +134,6 @@ export class HitHighlightRender {
   /** */
   constructor(duration) {
     this.sprTimer = new utils.Timer(duration);
-    this.sprTimer.timestampStart = 0;
   }
 }
 
@@ -117,7 +141,6 @@ export class AttackingHighlightRender {
   /** */
   constructor(duration) {
     this.sprTimer = new utils.Timer(duration);
-    this.sprTimer.timestampStart = 0;
   }
 }
 

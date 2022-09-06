@@ -19,12 +19,14 @@ import {
     HitBody,
     Fighter,
     Ui,
+    HitHighlightRender,
 } from './components.js';
 import {
   getPlayerEntity,
 } from './entities.js';
 const { PhysicsBody } = require('./components.js');
 
+/** @param {import('./ecs.js').ECS} ecs */
 function Input(ecs) {
   const selector = ecs.select(Player, PhysicsBody, HitPoints);
   const playerEntity = getPlayerEntity(ecs);
@@ -51,7 +53,7 @@ function Input(ecs) {
     // TODO: Add game end state
 
     // pause game
-    
+
     if(playerEntity.components.Stunnable?.isStunned) {
       return;
     }
@@ -138,12 +140,41 @@ function Input(ecs) {
   }
 }
 
+/** @param {import('./ecs.js').ECS} ecs */
+function EnemySpawner(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function DistributeDeathShards(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function Stunning(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function EnemyAI(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function Dashing(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function Deflection(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function Bashing(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function Striking(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function Jumping(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
 function Movement(ecs) {
   const selector = ecs.select(PhysicsBody);
 
   const iterate = (entity) => {
     const physics = entity.get(PhysicsBody);
 
+    const frameRatio = draw.fm;
     physics.x += physics.vx * frameRatio;
     physics.y += physics.vy * frameRatio;
 
@@ -152,15 +183,18 @@ function Movement(ecs) {
   };
 }
 
-function Ai(ecs) {
-  const select = ecs.select(Ai);
+/** @param {import('./ecs.js').ECS} ecs */
+function AttackingHighlightFlipper(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function HitHighlightFlipper(ecs) {
+  const selector = ecs.select(Renderable, HitHighlightFlipper);
 
   const iterate = (entity) => {
-    // if within player x-range, check y-range
-    //  if within y-range, 75% strike, 25% bash
-    //  else jump
-    //    if jump apex is too low, double jump
-    // else move within player x-range
+    const renderable = entity.get(Renderable);
+    const h = entity.get(HitHighlightRender);
+
+    renderable.highlighted = !h.sprTimer.isComplete();
   };
 }
 
@@ -202,26 +236,40 @@ function CameraMover(ecs) {
   createSystem.bind(this)(selector, iterate);
 }
 
+/** @param {import('./ecs.js').ECS} ecs */
+function RenderActors(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function RenderUI(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function LimitedLifetimeUpdater(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function HitPointUpdater(ecs) {}
+
+/** @param {import('./ecs.js').ECS} ecs */
+function checkCollisions(ecs) {}
+
 export const get = (ecs) => {
   return [
-    // new Input(ecs),
-    // new EnemySpawner(ecs),
-    // new DistributeDeathShards(ecs),
-    // new Stunning(ecs),
-    // new EnemyAI(ecs), //swordsman AI
-    // new Dashing(ecs),
-    // new Deflection(ecs),
-    // new Bashing(ecs),
-    // new Striking(ecs),
-    // new Jumping(ecs),
-    // new Movement(ecs),
-    // new AttackingHighlightFlipper(ecs),
-    // new ActionResolver(ecs),
-    // new HitHightlightFlipper(ecs),
-    // new CameraMover(ecs),
-    // new RenderActors(ecs),
-    // new RenderUi(ecs),
-    // new LimitedLifetimeUpdater(ecs),
-    // new HitPointUpdater(ecs),
+    new Input(ecs),
+    new EnemySpawner(ecs),
+    new DistributeDeathShards(ecs),
+    new Stunning(ecs),
+    new EnemyAI(ecs),
+    new Dashing(ecs),
+    new Deflection(ecs),
+    new Bashing(ecs),
+    new Striking(ecs),
+    new Jumping(ecs),
+    new Movement(ecs),
+    new AttackingHighlightFlipper(ecs),
+    new HitHightlightFlipper(ecs),
+    new CameraMover(ecs),
+    new RenderActors(ecs),
+    new RenderUI(ecs),
+    new LimitedLifetimeUpdater(ecs),
+    new HitPointUpdater(ecs),
   ];
 };
