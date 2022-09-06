@@ -1,4 +1,4 @@
-import { Ai, AttackingHighlightRender, Bashing, Comboable, Dashing, Deflecting, Fighter, HitHighlightRender, HitPoints, Jumping, LimitedLifetime, PhysicsBody, Player, Renderable, Shardable, Striking, Stunnable, Ui } from "./components";
+import { Ai, AttackingHighlightRender, Bashing, Comboable, Dashing, Deflecting, Fighter, HitBody, HitHighlightRender, HitPoints, Jumping, LimitedLifetime, PhysicsBody, Player, Renderable, Shardable, Striking, Stunnable, Ui } from "./components";
 
 let uiId = '';
 export const getUiEntity = (ecs) => ecs.get(uiId);
@@ -51,6 +51,7 @@ export const createEnemyFighter = (ecs) => {
     new Renderable(),
     new LimitedLifetime(),
     new Ai(),
+    new HitBody(),
     new HitHighlightRender(),
     new AttackingHighlightRender(),
     new HitPoints(5),

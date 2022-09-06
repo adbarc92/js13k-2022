@@ -11,7 +11,7 @@
  * @property {string} [strokeColor]
  */
 
-/** @typedef {[HTMLCanvasElement, number, number, number, number]} Sprite */
+/** @typedef {[HTMLCanvasElement, number, number, number, number, [number, number]]} Sprite */
 
 /** @type {DrawTextParams} */
 const DEFAULT_TEXT_PARAMS = {
@@ -21,6 +21,10 @@ const DEFAULT_TEXT_PARAMS = {
   align: 'center',
   strokeColor: colors.BLACK,
 };
+
+const SWORD_RED = 0;
+const SWORD_GREEN = 0;
+const SWORD_BLUE = 0;
 
 class Draw {
   /** @type {HTMLCanvasElement | null} */
@@ -151,7 +155,7 @@ class Draw {
   createSprite(img, x, y, w, h) {
     const [canvas, ctx] = this.createCanvas('', w, h);
     ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
-    return [canvas, 0, 0, w, h];
+    return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
   }
 
 /**
@@ -164,7 +168,7 @@ class Draw {
     ctx.translate(w, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(c, 0, 0);
-    return [canvas, 0, 0, w, h];
+    return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
   }
 
 /**
@@ -178,7 +182,7 @@ class Draw {
     const [canvas, ctx] = this.createCanvas('', w, h);
     ctx.filter = 'invert(' + inversion.toString() = ')';
     ctx.drawImage(c, 0, 0);
-    return [canvas, 0, 0, w, h];
+    return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
   }
 
 /**
@@ -195,7 +199,7 @@ class Draw {
   });
 }
 
-/**
+  /**
    * @returns {Sprite}
    */
   loadSprites (img, spriteSize) {
@@ -225,7 +229,37 @@ class Draw {
     return sprites;
   }
 
-    /**
+  loadHitBody(spriteCanvas, spriteCtx) {
+    const hitBody = [];
+    const hitSword = [];
+    const imgData = spriteCtx.getImageData(
+      0,
+      0,
+      spriteCanvas.width,
+      spriteCanvas.height,
+    );
+    let x = 0, y = 0;
+    for(let i = 0; i < imgData.length; i += 4) {
+      if (
+        imgData[i] === SWORD_RED &&
+        imgData[i + 1] === SWORD_BLUE &&
+        imgData[i + 2] === SWORD_GREEN
+      ) {
+        hitSword.push(x, y);
+      } else if(imgData[i]) {
+        hitBody.push(x, y);
+      }
+      if (x + 1 === spriteCanvas.width) {
+        x = 0;
+        y += 1;
+      } else {
+        x += 1;
+      }
+    }
+    return [hitBody, hitSword];
+  }
+
+  /**
    * @param {number} x
    * @param {number} y
    * @param {number} w

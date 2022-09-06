@@ -48,4 +48,13 @@ export class Timer {
   isComplete() {
     return this.getPctComplete() >= 1;
   }
+
+  onCompletion() {
+    return new Promise((resolve) => {
+      if (this.isComplete()) {
+        return;
+      }
+      this.awaits.push(resolve);
+    });
+  }
 }

@@ -18,10 +18,12 @@ import {
     HitPoints,
     HitBody,
     Fighter,
+    Swarm,
     Ui,
     HitHighlightRender,
 } from './components.js';
 import {
+  createEnemyFighter,
   getPlayerEntity,
 } from './entities.js';
 const { PhysicsBody } = require('./components.js');
@@ -51,7 +53,6 @@ function Input(ecs) {
    */
   const handleKeyUpdate = (player, physics, hp) => {
     // TODO: Add game end state
-
     // pause game
 
     if(playerEntity.components.Stunnable?.isStunned) {
@@ -76,27 +77,28 @@ function Input(ecs) {
         jumping.isJumping &&
         !jumping.hasDoubleJumped
       ) {
+        jumping.intendsToJump = true;
         // handleAnimation - double jump
         // handlePhysics - +vy, -ay
       } else {
-        jumping.isJumping = true;
+        jumping.intendsToJump = true;
         // handleAnimation - jumping
         // handlePhysics - +vy, -ay
       }
     }
 
     if (player.keys.ArrowDown || player.keys.s) {
-      // deflect
+      playerEntity.components.Deflecting.intendsToDeflect = true;
     }
 
     if (player.keys.z || player.keys.Shift) {
-      // bash
-      // handleAnimation - bash
+      playerEntity.components.Bashing.intendsToBash = true;
       // checkCollision
       // setStunned
     }
 
     if (player.keys.x || player.keys.Enter) {
+      playerEntity.components.Striking.intendsToStrike = true;
       // strike
       // handleAnimation - strike
       // checkCollision
@@ -141,31 +143,161 @@ function Input(ecs) {
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function EnemySpawner(ecs) {}
+function EnemySpawner(ecs) {
+  const player = getPlayerEntity(ecs).get(Player);
+  this.update = () => {
+    if (!player.gameStarted) {
+      return;
+    }
+    /** @type {Swarm} */
+    const swarm = getSwarm(ecs).get(Swarm);
+
+    if (swarm.waveTimer.isComplete()) {
+      for(let i = 0; i < swarm.waveNumber + 5; i += 2) {
+        let { x } = player.PhysicsBody;
+        x = i % 2 === 0 ? x - 10 : x + 10;
+        createEnemyFighter(x, 20);
+      }
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function DistributeDeathShards(ecs) {}
+function DistributeDeathShards(ecs) {
+  const selector = ecs.select(Swarm, Shardable);
+
+  const iterate = (entity) => {
+    if (entity.Shardable.timeToNextShard.isComplete()) {
+      entity.Shardable.shardCount += 1;
+      entity.Shardable.hasShards = true;
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function Stunning(ecs) {}
+function Stunning(ecs) {
+  const selector = ecs.select(Stunnable);
+
+  const iterate = (entity) => {
+    if (
+      entity.Stunnable.isStunned &&
+      entity.Stunnable.cooldown.isComplete()
+    ) {
+      entity.Stunnable.isStunned = false;
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemyAI(ecs) {}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function Dashing(ecs) {}
+function DashHandler(ecs) {
+  const selector = ecs.select(Dashing);
+
+  const iterate = (entity) => {
+    const { intendsToAct, canAct, isActing, cooldown, duration } = entity.Dashing;
+    if (!isActing && cooldown.isComplete()) {
+      canAct = true;
+    }
+    if (!canAct && intendsToAct) {
+      // handleAnimation - dashing
+      isActing = true;
+      duration.start();
+    }
+    if (isActing && duration.isComplete()) {
+      canAct = false;
+      cooldown.start();
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function Deflection(ecs) {}
+function DeflectionHandler(ecs) {
+  const selector = ecs.select(Deflection);
+
+  const iterate = (entity) => {
+    const { intendsToAct, canAct, isActing, cooldown, duration } = entity.Deflection;
+    if (!isActing && cooldown.isComplete()) {
+      canAct = true;
+    }
+    if (!canAct && intendsToAct) {
+      // handleAnimation - deflecting
+      isActing = true;
+      // Collision detection
+      duration.start();
+    }
+    if (isActing && duration.isComplete()) {
+      canAct = false;
+      cooldown.start();
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function Bashing(ecs) {}
+function BashHandler(ecs) {
+  const selector = ecs.select(Bashing);
+
+  const iterate = (entity) => {
+    const { intendsToAct, canAct, isActing, cooldown, duration } = entity.Bashing;
+    if (!isActing && cooldown.isComplete()) {
+      canAct = true;
+    }
+    if (!canAct && intendsToAct) {
+      // handleAnimation - deflecting
+      isActing = true;
+      // Collision detection
+      duration.start();
+    }
+    if (isActing && duration.isComplete()) {
+      canAct = false;
+      cooldown.start();
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function Striking(ecs) {}
+function StrikeHandler(ecs) {
+  const selector = ecs.select(Striking);
+
+  const iterate = (entity) => {
+    const { intendsToAct, canAct, isActing, cooldown, duration } = entity.Striking;
+    if (!isActing && cooldown.isComplete()) {
+      canAct = true;
+    }
+    if (!canAct && intendsToAct) {
+      // handleAnimation - striking
+      isActing = true;
+      // Collision detection
+      duration.start();
+    }
+    if (isActing && duration.isComplete()) {
+      canAct = false;
+      cooldown.start();
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function Jumping(ecs) {}
+function JumpHandler(ecs) {
+  const selector = ecs.select(Jumping);
+
+  const iterate = (entity) => {
+    const { intendsToAct, actionCap, actionUses, cooldown, duration } = entity.Jumping;
+    if (entity.PhysicsBody.y < 1) {
+      actionCap = 0;
+    }
+    if (actionUses < actionCap && intendsToAct) {
+      // handleAnimation - striking
+      actionUses += 1;
+      duration.start();
+    }
+    if (actionUses && duration.isComplete()) {
+      actionCap = false;
+      cooldown.start();
+    }
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Movement(ecs) {
@@ -232,12 +364,140 @@ function CameraMover(ecs) {
     camera.x = Math.floor(camera.x);
     camera.y = Math.round(camera.y);
   };
-
-  createSystem.bind(this)(selector, iterate);
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function RenderActors(ecs) {}
+function RenderActors(ecs) {
+  const sprites = ecs.select(PhysicsBody, Renderable);
+  const camera = ecs.select(Camera);
+
+  let renderList = [];
+
+  /**
+   * @param {{entity, z}[]} arr
+   * @param {{entity, z}} val
+   */
+  function addAndSort(arr, val) {
+    arr.push(val);
+    for (let i = arr.length - 1; i > 0 && arr[i].z < arr[i - 1].z; i--) {
+      const tmp = arr[i];
+      arr[i] = arr[i - 1];
+      arr[i - 1] = tmp;
+    }
+  }
+
+  /** @param {Entity} entity */
+  const drawEntity = (entity) => {
+    /** @type {PhysicsBody} */
+    const { x, y, angle } = entity.get(PhysicsBody);
+    /** @type {Renderable} */
+    const {
+      spriteName,
+      circle,
+      rectangle,
+      opacity,
+      scale,
+      flipped,
+      highlighted,
+      ship,
+    } = entity.get(Renderable);
+
+    let spritePostFix = '';
+    if (flipped) {
+      spritePostFix += '_f';
+    }
+    if (highlighted) {
+      spritePostFix += '_h';
+    }
+
+    draw.setOpacity(opacity);
+    if (spriteName) {
+      draw.drawSprite(spriteName + spritePostFix, x, y, angle, scale);
+    }
+    if (circle) {
+      const { r, color } = circle;
+      draw.drawCircle(x, y, r * scale, color);
+    }
+    if (rectangle) {
+      const { w, h, color } = rectangle;
+      draw.drawRect(x, y, w * scale, h * scale, color);
+    }
+    if (ship) {
+      const spriteList = ship.getHitCirclePositions(angle);
+      for (const {
+        offset: [eX, eY],
+        spr,
+      } of spriteList) {
+        draw.drawSprite(spr + spritePostFix, x + eX, y + eY, angle, scale);
+      }
+      const turretList = ship.getTurretPositions(angle);
+      for (const { spr, physics } of turretList) {
+        draw.drawSprite(spr, physics.x, physics.y, physics.angle, scale);
+      }
+    }
+    draw.setOpacity(1);
+  };
+
+  /** @param {Entity} entity */
+  const addToRenderList = (entity) => {
+    /** @type {Renderable} */
+    const renderable = entity.get(Renderable);
+    addAndSort(renderList, {
+      entity,
+      z: renderable.z,
+    });
+  };
+
+  /** @param {Entity} entity */
+  const drawRelativeToCamera = (entity) => {
+    /** @type {Camera} */
+    const { x, y, w, h } = entity.get(Camera);
+    const ctx = draw.getCtx();
+    ctx.save();
+    ctx.translate(-x, -y);
+    for (const { entity } of renderList) {
+      const { x: x2, y: y2 } = entity.get(PhysicsBody);
+      if (
+        utils.distance(x + w / 2, y + h / 2, x2, y2) <
+        draw.SCREEN_WIDTH / 2 + 160
+      ) {
+        drawEntity(entity);
+      }
+    }
+
+    // compass
+    const { x: baseX, y: baseY } = getBaseEntity(ecs).get(PhysicsBody);
+    const { x: playerX, y: playerY } = getPlayerEntity(ecs).get(PhysicsBody);
+    const angle = utils.getAngleTowards([playerX, playerY], [baseX, baseY]);
+    const [eX, eY] = utils.getVector(angle, 96);
+    const [eX2, eY2] = utils.getVector(angle, 64);
+
+    // draw.drawLine
+    draw.drawCircle(playerX + eX, playerY + eY, 2, 'red');
+    draw.drawLine(
+      playerX + eX2,
+      playerY + eY2,
+      playerX + eX,
+      playerY + eY,
+      'red'
+    );
+
+    ctx.restore();
+    renderList = [];
+  };
+
+  /** @type {any} */
+  const canvas = document.getElementById('canvasDiv');
+
+  this.update = () => {
+    canvas.style.filter = getPlayerEntity(ecs).get(Player).gameOver
+      ? 'grayscale(1)'
+      : '';
+
+    sprites.iterate(addToRenderList);
+    camera.iterate(drawRelativeToCamera);
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderUI(ecs) {}
@@ -249,7 +509,7 @@ function LimitedLifetimeUpdater(ecs) {}
 function HitPointUpdater(ecs) {}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function checkCollisions(ecs) {}
+function CheckCollisions(ecs) {}
 
 export const get = (ecs) => {
   return [
@@ -258,17 +518,18 @@ export const get = (ecs) => {
     new DistributeDeathShards(ecs),
     new Stunning(ecs),
     new EnemyAI(ecs),
-    new Dashing(ecs),
-    new Deflection(ecs),
-    new Bashing(ecs),
-    new Striking(ecs),
-    new Jumping(ecs),
+    new DashHandler(ecs),
+    new DeflectionHandler(ecs),
+    new BashHandler(ecs),
+    new StrikeHandler(ecs),
+    new JumpHandler(ecs),
     new Movement(ecs),
     new AttackingHighlightFlipper(ecs),
     new HitHightlightFlipper(ecs),
     new CameraMover(ecs),
     new RenderActors(ecs),
     new RenderUI(ecs),
+    new CheckCollisions(ecs),
     new LimitedLifetimeUpdater(ecs),
     new HitPointUpdater(ecs),
   ];
