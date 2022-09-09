@@ -1,4 +1,3 @@
-
 const getNow = () => window.performance.now();
 const timers = [];
 
@@ -57,4 +56,8 @@ export class Timer {
       this.awaits.push(resolve);
     });
   }
+}
+
+export function createMap() {
+  return new Array(32).fill(0);
 }

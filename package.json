@@ -6,6 +6,9 @@
   "repository": "https://github.com/adbarc92/js13k-2022",
   "author": "adbarc92 <adbarclay92@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "build": "rm -rf dist *.zip && node scripts/build.js"
+  },
   "devDependencies": {
     "eslint": "^8.23.0",
     "eslint-config-prettier": "^8.5.0",

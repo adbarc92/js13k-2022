@@ -1,4 +1,26 @@
-import { Ai, AttackingHighlightRender, Bashing, Comboable, Dashing, Deflecting, Fighter, HitBody, HitHighlightRender, HitPoints, Jumping, LimitedLifetime, PhysicsBody, Player, Renderable, Shardable, Striking, Stunnable, Ui } from "./components";
+import {
+  Ai,
+  AttackingHighlightRender,
+  Bashing,
+  Comboable,
+  Dashing,
+  Deflecting,
+  Fighter,
+  HitBody,
+  HitHighlightRender,
+  HitPoints,
+  Jumping,
+  LimitedLifetime,
+  PhysicsBody,
+  Player,
+  Renderable,
+  Shardable,
+  Striking,
+  Stunnable,
+  Ui,
+} from './components';
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from './draw';
+import { createMap } from './utils';
 
 let uiId = '';
 export const getUiEntity = (ecs) => ecs.get(uiId);
@@ -6,16 +28,17 @@ let playerFighterId = '';
 export const getPlayerEntity = (ecs) => ecs.get(playerFighterId);
 export const isPlayerEntity = (entity) => entity.id === playerFighterId;
 let swarmId = '';
-export const getUiEntity = (ecs) => ecs.get(swarmId);
+export const getSwarmEntity = (ecs) => ecs.get(swarmId);
 
+let mapId = '';
+export const getMapId = () => mapId;
+export const getMapEntity = (ecs) => ecs.get(mapId);
 
 export const createPlayer = (ecs) => {
-  const player = new Player();
-  const fighter = new Fighter();
-
-  const ent = ecs.create(
+  const ent = ecs.create();
+  ent.add(
     new Player(),
-    new Fighter(SCREEN_WIDTH/2, SCREEN_HEIGHT/2),
+    new Fighter(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
     new PhysicsBody(),
     new Stunnable(),
     new Jumping(),
@@ -28,9 +51,8 @@ export const createPlayer = (ecs) => {
     new Renderable(),
     new Ai(),
     new HitHighlightRender(),
-    new HitPoints(20),
+    new HitPoints(20)
   );
-
 };
 
 export const createEnemyFighter = (ecs) => {
@@ -54,7 +76,7 @@ export const createEnemyFighter = (ecs) => {
     new HitBody(),
     new HitHighlightRender(),
     new AttackingHighlightRender(),
-    new HitPoints(5),
+    new HitPoints(5)
   );
 };
 
@@ -67,8 +89,9 @@ export const createUi = (ecs) => {
 export const newGame = (ecs) => {
   ecs.reset();
 
-  createPlayer(ecs);
+  const map = createMap();
 
+  createPlayer(ecs);
 };
 
 function EnemyFighterSpawner() {}

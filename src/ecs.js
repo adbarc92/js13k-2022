@@ -1,10 +1,9 @@
-
 /**
  * @typedef {object} Entity
- * @propery {number} [id]
+ * @property {number} [id]
  * @property {object} [components]
  * @property {number | null} [mask]
-*/
+ */
 const selectors = [];
 const systems = [];
 const entities = {};
@@ -29,7 +28,7 @@ const getComponentSign = getComponentProperty.bind(null, ecsComponentSign);
 const getComponentMask = getComponentProperty.bind(null, ecsComponentMask);
 
 const matchEntity = (entity) => {
-  entity.id && selectors.forEach(selector => selector.match(entity));
+  entity.id && selectors.forEach((selector) => selector.match(entity));
 };
 
 const ejectEntity = (entity) => {
@@ -42,7 +41,7 @@ const ejectEntity = (entity) => {
     }
   }
 
-  selectors.forEach(selector => selector.remove(entity));
+  selectors.forEach((selector) => selector.remove(entity));
   delete entities[entity.id];
   entity.id = 0;
   // entity.mask = 0;
@@ -214,7 +213,7 @@ export default {
   },
 
   process(...s) {
-    s.forEach(system => systems.push(system));
+    s.forEach((system) => systems.push(system));
   },
 
   create(id) {
@@ -263,8 +262,8 @@ export default {
   },
 
   reset() {
-    for(const i in entities) {
+    for (const i in entities) {
       entities[i].eject();
     }
-  }
+  },
 };
