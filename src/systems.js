@@ -99,12 +99,6 @@ function Input(ecs) {
 
     if (player.keys.x || player.keys.Enter) {
       playerEntity.components.Striking.intendsToStrike = true;
-      // strike
-      // handleAnimation - strike
-      // checkCollision
-      // checkShards
-      // calculateDamage
-      // doDamage
     }
   };
 
@@ -507,6 +501,8 @@ function LimitedLifetimeUpdater(ecs) {}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function HitPointUpdater(ecs) {}
+
+function CheckTileCollisions(ecs) {}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function CheckCollisions(ecs) {}

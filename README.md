@@ -32,6 +32,14 @@ Gather enough Shards of Death to slay the Divider.
 * Shard of Death [] []
 * Divider [] [] [] [] []
 
+## Roadmap
+* [X] Builds
+* [] Sprites loaded
+* [] Playable
+* [] Gamepad support
+* [] Touch support
+
+
 ## Acknowledgements
 * [Benjamin Brown](https://github.com/benjamin-t-brown)
 * [JS13k resources](https://js13kgames.github.io/resources/)
