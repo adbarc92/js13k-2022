@@ -18,6 +18,9 @@ Gather enough Shards of Death to slay the Divider.
 * Slashing without possessing any Shards of Death will prompt an immediate counter.
 * The more Shards of Death one holds, the more damage they will deal and take.
 * While holding Shards of Death, a countdown to death will occur.
+### Highlighting
+* When attacking, enemies will light up right before they should be deflected.
+* When damaged, an enemy will be lit up.
 
 ## Sprites
 * Slash [] [] [] []
@@ -28,6 +31,14 @@ Gather enough Shards of Death to slay the Divider.
 * Dash [] []
 * Shard of Death [] []
 * Divider [] [] [] [] []
+
+## Roadmap
+* [X] Builds
+* [] Sprites loaded
+* [] Playable
+* [] Gamepad support
+* [] Touch support
+
 
 ## Acknowledgements
 * [Benjamin Brown](https://github.com/benjamin-t-brown)

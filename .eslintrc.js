@@ -5,44 +5,41 @@ module.exports = {
     node: true,
   },
   extends: [
-    "eslint:recommended",
-    "plugin:prettier/recommended",
-    "plugin:jsdoc/recommended",
+    'eslint:recommended',
+    'plugin:prettier/recommended',
+    // 'plugin:jsdoc/recommended',
   ],
   parserOptions: {
     ecmaVersion: 2022,
-    sourceType: "module",
+    sourceType: 'module',
   },
-  plugins: [
-    "prettier",
-    "jsdoc",
-  ],
+  plugins: ['prettier'],
   settings: {
     jsdoc: {
-      mode: "typescript",
+      mode: 'typescript',
     },
   },
   rules: {
-    "prettier/prettier": [
-      "warn",
+    'prettier/prettier': [
+      'warn',
       {
-        "bracketSpacing": true,
-        "singleQuote": true,
-        "tabWidth": 2,
-        "trailingComma": "es5"
-      }
+        bracketSpacing: true,
+        singleQuote: true,
+        tabWidth: 2,
+        trailingComma: 'es5',
+      },
     ],
-    "no-unused-vars": "warn",
-    "jsdoc/require-property-description": "off",
-    "jsdoc/require-param-description": "off",
-    "jsdoc/require-returns-description": "off",
-    "require-jsdoc": [
+    'no-unused-vars': 'warn',
+    'jsdoc/require-property-description': 'off',
+    'jsdoc/require-param-description': 'off',
+    'jsdoc/require-returns-description': 'off',
+    'require-jsdoc': [
       1,
       {
-        "require": {
-          "MethodDefinition": true
-        }
-      }
-    ]
-  }
+        require: {
+          MethodDefinition: true,
+        },
+      },
+    ],
+  },
 };

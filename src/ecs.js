@@ -1,3 +1,9 @@
+/**
+ * @typedef {object} Entity
+ * @property {number} [id]
+ * @property {object} [components]
+ * @property {number | null} [mask]
+ */
 const selectors = [];
 const systems = [];
 const entities = {};
@@ -22,7 +28,7 @@ const getComponentSign = getComponentProperty.bind(null, ecsComponentSign);
 const getComponentMask = getComponentProperty.bind(null, ecsComponentMask);
 
 const matchEntity = (entity) => {
-  entity.id && selectors.forEach(selector => selector.match(entity));
+  entity.id && selectors.forEach((selector) => selector.match(entity));
 };
 
 const ejectEntity = (entity) => {
@@ -35,7 +41,7 @@ const ejectEntity = (entity) => {
     }
   }
 
-  selectors.forEach(selector => selector.remove(entity));
+  selectors.forEach((selector) => selector.remove(entity));
   delete entities[entity.id];
   entity.id = 0;
   // entity.mask = 0;
@@ -81,7 +87,6 @@ class Entity {
   }
 
   get(Component) {
-    // return this.components[getComponentSign(Component)];
     return this.components[Component[ecsComponentSign]];
   }
 
@@ -185,7 +190,7 @@ let bit = 0;
 const perf = performance || Date;
 const now = perf.now.bind(perf);
 
-export default {
+export const ecs = {
   register(...Components) {
     Components.forEach((Component) => {
       if (bit > 31) {
@@ -207,7 +212,7 @@ export default {
   },
 
   process(...s) {
-    s.forEach(system => systems.push(system));
+    s.forEach((system) => systems.push(system));
   },
 
   create(id) {
@@ -256,8 +261,8 @@ export default {
   },
 
   reset() {
-    for(const i in entities) {
+    for (const i in entities) {
       entities[i].eject();
     }
-  }
+  },
 };
