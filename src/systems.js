@@ -13,13 +13,13 @@ import {
   Player,
   Ai,
   Camera,
-  HighlightRender,
   Projectile,
   HitPoints,
   HitBody,
   Fighter,
   Swarm,
   Ui,
+  World,
   HitHighlightRender,
   WORLD_WIDTH,
   TILE_SCALE,
@@ -28,16 +28,15 @@ import {
 } from './components.js';
 import {
   createEnemyFighter,
-  getMapEntity,
-  getMapId,
+  getWorldEntity,
   getPlayerEntity,
   getSwarmEntity,
 } from './entities.js';
-import { draw } from './draw';
+import { colors, draw } from './draw.js';
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Input(ecs) {
-  const selector = ecs.select(Player, PhysicsBody, HitPoints);
+  const selector = ecs.select(Player, PhysicsBody);
   const playerEntity = getPlayerEntity(ecs);
 
   /** @type {KeyboardEvent[]} */
@@ -58,7 +57,7 @@ function Input(ecs) {
    * @param {PhysicsBody} physics
    * @param {HitPoints} hp
    */
-  const handleKeyUpdate = (player, physics, hp) => {
+  const handleKeyUpdate = (player, physics) => {
     // TODO: Add game end state
     // pause game
 
@@ -107,7 +106,7 @@ function Input(ecs) {
   };
 
   /** @param {Entity} entity */
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     /** @type {Player} */
     const player = entity.get(Player);
     /** @type {PhysicsBody} */
@@ -138,12 +137,14 @@ function Input(ecs) {
       keysDown = [];
     }
   };
+
+  this.update = () => selector.iterate(this.iterate);
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemySpawner(ecs) {
   const player = getPlayerEntity(ecs).get(Player);
-  this.update = () => {
+  this.iterate = () => {
     if (!player.gameStarted) {
       return;
     }
@@ -164,7 +165,7 @@ function EnemySpawner(ecs) {
 function DistributeDeathShards(ecs) {
   const selector = ecs.select(Swarm, Shardable);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     if (entity.Shardable.timeToNextShard.isComplete()) {
       entity.Shardable.shardCount += 1;
       entity.Shardable.hasShards = true;
@@ -176,7 +177,7 @@ function DistributeDeathShards(ecs) {
 function Stunning(ecs) {
   const selector = ecs.select(Stunnable);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     if (entity.Stunnable.isStunned && entity.Stunnable.cooldown.isComplete()) {
       entity.Stunnable.isStunned = false;
     }
@@ -190,7 +191,7 @@ function EnemyAI(ecs) {}
 function DashHandler(ecs) {
   const selector = ecs.select(Dashing);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     let { intendsToAct, canAct, isActing, cooldown, duration } = entity.Dashing;
     if (!isActing && cooldown.isComplete()) {
       canAct = true;
@@ -211,7 +212,7 @@ function DashHandler(ecs) {
 function DeflectionHandler(ecs) {
   const selector = ecs.select(Deflecting);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     let { intendsToAct, canAct, isActing, cooldown, duration } =
       entity.Deflection;
     if (!isActing && cooldown.isComplete()) {
@@ -234,7 +235,7 @@ function DeflectionHandler(ecs) {
 function BashHandler(ecs) {
   const selector = ecs.select(Bashing);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     const { intendsToAct, canAct, isActing, cooldown, duration } =
       entity.Bashing;
     if (!isActing && cooldown.isComplete()) {
@@ -257,7 +258,7 @@ function BashHandler(ecs) {
 function StrikeHandler(ecs) {
   const selector = ecs.select(Striking);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     const { intendsToAct, canAct, isActing, cooldown, duration } =
       entity.Striking;
     if (!isActing && cooldown.isComplete()) {
@@ -280,7 +281,7 @@ function StrikeHandler(ecs) {
 function JumpHandler(ecs) {
   const selector = ecs.select(Jumping);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     const { intendsToAct, actionCap, actionUses, cooldown, duration } =
       entity.Jumping;
     if (entity.PhysicsBody.y < 1) {
@@ -302,7 +303,7 @@ function JumpHandler(ecs) {
 function Movement(ecs) {
   const selector = ecs.select(PhysicsBody);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     const physics = entity.get(PhysicsBody);
 
     const frameRatio = draw.fm;
@@ -321,7 +322,7 @@ function AttackingHighlightFlipper(ecs) {}
 function HitHighlightFlipper(ecs) {
   const selector = ecs.select(Renderable, HitHighlightFlipper);
 
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     const renderable = entity.get(Renderable);
     const h = entity.get(HitHighlightRender);
 
@@ -334,7 +335,7 @@ function CameraMover(ecs) {
   const selector = ecs.select(Camera, Fighter, PhysicsBody);
 
   /** @param {Entity} entity */
-  const iterate = (entity) => {
+  this.iterate = (entity) => {
     /** @type {Camera} */
     const camera = entity.get(Camera);
     /** @type {PhysicsBody} */
@@ -452,20 +453,24 @@ function RenderActors(ecs) {
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function RenderUI(ecs) {}
+function RenderUI(ecs) {
+  this.update = () => {};
+}
 
-function RenderMap(esc) {
-  const selection = getMapEntity(getMapId());
-
-  const iterate = (entity) => {
+function RenderWorld(ecs) {
+  this.update = () => {
+    console.log('Rendering world...');
     const ctx = draw.getCtx();
-    for (let i = 0; i < entity.tiles.length; i++) {
-      const tile = entity.tiles[i];
-      let color = tile === 1 ? 'green' : 'white';
-      const t = TILE_SIZE * TILE_SCALE;
-      const x = i * TILE_SIZE;
-      const y = i * TILE_SIZE;
-      draw.drawRect(x, y, t, t, color, false, ctx);
+    const world = getWorldEntity(ecs).get(World);
+    for (let i = 0; i < world.height; i++) {
+      for (let j = 0; j < world.width; j++) {
+        const tile = world.tiles[i * world.width + j];
+        let color = tile === 1 ? colors.BLACK : colors.WHITE;
+        const t = TILE_SIZE * TILE_SCALE;
+        const x = j * TILE_SIZE;
+        const y = i * TILE_SIZE;
+        draw.drawRect(x, y, t, t, color, false, ctx);
+      }
     }
   };
 }
@@ -481,26 +486,27 @@ function CheckTileCollisions(ecs) {}
 /** @param {import('./ecs.js').ECS} ecs */
 function CheckCollisions(ecs) {}
 
-export const get = (ecs) => {
+export const getSystems = (ecs) => {
   return [
     new Input(ecs),
-    new EnemySpawner(ecs),
-    new DistributeDeathShards(ecs),
-    new Stunning(ecs),
-    new EnemyAI(ecs),
-    new DashHandler(ecs),
-    new DeflectionHandler(ecs),
-    new BashHandler(ecs),
-    new StrikeHandler(ecs),
-    new JumpHandler(ecs),
-    new Movement(ecs),
-    new AttackingHighlightFlipper(ecs),
-    new HitHighlightFlipper(ecs),
-    new CameraMover(ecs),
-    new RenderActors(ecs),
-    new RenderUI(ecs),
-    new CheckCollisions(ecs),
-    new LimitedLifetimeUpdater(ecs),
-    new HitPointUpdater(ecs),
+    // new EnemySpawner(ecs),
+    // new DistributeDeathShards(ecs),
+    // new Stunning(ecs),
+    // new EnemyAI(ecs),
+    // new DashHandler(ecs),
+    // new DeflectionHandler(ecs),
+    // new BashHandler(ecs),
+    // new StrikeHandler(ecs),
+    // new JumpHandler(ecs),
+    // new Movement(ecs),
+    // new AttackingHighlightFlipper(ecs),
+    // new HitHighlightFlipper(ecs),
+    // new CameraMover(ecs),
+    // new RenderActors(ecs),
+    // new RenderUI(ecs),
+    new RenderWorld(ecs),
+    // new CheckCollisions(ecs),
+    // new LimitedLifetimeUpdater(ecs),
+    // new HitPointUpdater(ecs),
   ];
 };

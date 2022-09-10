@@ -67,7 +67,7 @@ class Draw {
     canvas = c;
     this.handleResize();
     document.getElementById('canvasDiv')?.appendChild(canvas);
-    const img = await this.loadImage('sprites', 'res/sprites.png');
+    const img = await this.loadImage('sprites', 'res/packed.png');
     const imgSize = img.width;
     const spriteSize = 16;
     this.sprites = this.loadSprites(img, spriteSize);

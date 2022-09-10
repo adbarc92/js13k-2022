@@ -1,5 +1,5 @@
-import { SCREEN_HEIGHT, SCREEN_WIDTH } from './draw';
-import { Timer } from './utils';
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from './draw.js';
+import { Timer } from './utils.js';
 
 export const TILE_SCALE = 4;
 export const TILE_SIZE = 16;
@@ -32,10 +32,12 @@ export class PhysicsBody {
   }
 }
 
-export class Map {
-  tiles = [];
+export class World {
   width = 32; // WORLD_WIDTH
   height = 32; // WORLD_HEIGHT
+  constructor(tiles) {
+    this.tiles = tiles || [];
+  }
 }
 
 export class Stunnable {
@@ -244,7 +246,7 @@ export class Ui {
   }
 }
 
-export const get = () => {
+export const getComponents = () => {
   return [
     PhysicsBody,
     Stunnable,
@@ -255,6 +257,7 @@ export const get = () => {
     Striking,
     Shardable,
     Comboable,
+    World,
     Renderable,
     LimitedLifetime,
     Player,

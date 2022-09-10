@@ -7,13 +7,13 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:prettier/recommended',
-    'plugin:jsdoc/recommended',
+    // 'plugin:jsdoc/recommended',
   ],
   parserOptions: {
     ecmaVersion: 2022,
     sourceType: 'module',
   },
-  plugins: ['prettier', 'jsdoc'],
+  plugins: ['prettier'],
   settings: {
     jsdoc: {
       mode: 'typescript',

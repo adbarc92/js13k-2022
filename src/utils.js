@@ -57,7 +57,3 @@ export class Timer {
     });
   }
 }
-
-export function createMap() {
-  return new Array(32).fill(0);
-}

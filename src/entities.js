@@ -1,4 +1,5 @@
 import {
+  World,
   Ai,
   AttackingHighlightRender,
   Bashing,
@@ -18,9 +19,10 @@ import {
   Striking,
   Stunnable,
   Ui,
-} from './components';
-import { SCREEN_HEIGHT, SCREEN_WIDTH } from './draw';
-import { createMap } from './utils';
+  WORLD_HEIGHT,
+  WORLD_WIDTH,
+} from './components.js';
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from './draw.js';
 
 let uiId = '';
 export const getUiEntity = (ecs) => ecs.get(uiId);
@@ -30,16 +32,16 @@ export const isPlayerEntity = (entity) => entity.id === playerFighterId;
 let swarmId = '';
 export const getSwarmEntity = (ecs) => ecs.get(swarmId);
 
-let mapId = '';
-export const getMapId = () => mapId;
-export const getMapEntity = (ecs) => ecs.get(mapId);
+let worldId = '';
+export const getWorldId = () => worldId;
+export const getWorldEntity = (ecs) => ecs.get(worldId);
 
 export const createPlayer = (ecs) => {
   const ent = ecs.create();
   ent.add(
     new Player(),
     new Fighter(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
-    new PhysicsBody(),
+    new PhysicsBody(0, 0),
     new Stunnable(),
     new Jumping(),
     new Bashing(),
@@ -48,11 +50,18 @@ export const createPlayer = (ecs) => {
     new Striking(),
     new Shardable(),
     new Comboable(),
-    new Renderable(),
+    new Renderable({ spriteName: '', z: 1, scale: 1 }),
     new Ai(),
     new HitHighlightRender(),
     new HitPoints(20)
   );
+  playerFighterId = ent.id;
+};
+
+export const createWorld = (ecs) => {
+  const ent = ecs.create();
+  ent.add(new World(new Array(WORLD_HEIGHT * WORLD_WIDTH).fill(0)));
+  worldId = ent.id;
 };
 
 export const createEnemyFighter = (ecs) => {
@@ -70,7 +79,7 @@ export const createEnemyFighter = (ecs) => {
     new Striking(),
     new Shardable(),
     new Comboable(),
-    new Renderable(),
+    new Renderable({ spriteName: '', z: 1, scale: 1 }),
     new LimitedLifetime(),
     new Ai(),
     new HitBody(),
@@ -88,10 +97,8 @@ export const createUi = (ecs) => {
 
 export const newGame = (ecs) => {
   ecs.reset();
-
-  const map = createMap();
-
   createPlayer(ecs);
+  createWorld(ecs);
 };
 
 function EnemyFighterSpawner() {}
