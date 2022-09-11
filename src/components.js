@@ -127,19 +127,27 @@ export class Shardable {
   }
 }
 
-export class Comboable {
-  comboCount = 0;
-}
+// export class Animation {
+//   start = 0;
+//   constructor(name, duration, frames, hitboxes, sounds) {
+//     this.name = name || '';
+//     this.duration = duration || 1000;
+//     this.frames = frames;
+//     this.hitboxes = hitboxes;
+//     this.sounds = sounds;
+//   }
+// }
 
 export class Renderable {
   flipped = false;
   highlighted = false;
 
-  constructor({ spriteName, z, scale, spriteSet }) {
+  constructor({ spriteName, z, scale, spriteSetName }) {
     this.spriteName = spriteName ?? '';
-    this.spriteSet = spriteSet;
-    this.duration = new Timer(0);
-    this.index = 0;
+    this.spriteSetName = spriteSetName;
+    this.animation = 'STANDING';
+    this.timeToNextSprite = new Timer();
+    this.currentSpriteIdx = 0;
     this.z = z ?? 0;
     this.scale = scale ?? 1;
   }
@@ -158,19 +166,12 @@ export class LimitedLifetime {
 }
 
 export class Player {
-  /** @type {Record<string, boolean>} */
-  keys = {};
-  score = 0;
-  crates = 0;
-  gameOver = false;
-
-  /** @param {string} key */
-  setKeyDown(key) {
-    this.keys[key] = true;
-  }
-  /** @param {string} key */
-  setKeyUp(key) {
-    this.keys[key] = false;
+  constructor() {
+    this.keys = {};
+    this.combo = 0;
+    this.gameOver = false;
+    this.gameStarted = false;
+    this.gameRunning = false;
   }
 }
 
@@ -220,13 +221,7 @@ export class HitBody {
   }
 }
 
-export class Fighter {
-  constructor(x, y) {
-    this.sprites = {};
-    this.x = 0;
-    this.y = 0;
-  }
-}
+export class Warrior {}
 
 export class Swarm {
   waveNumber = 0;
@@ -259,7 +254,6 @@ export const getComponents = () => {
     Deflecting,
     Striking,
     Shardable,
-    Comboable,
     World,
     Renderable,
     LimitedLifetime,
@@ -271,7 +265,7 @@ export const getComponents = () => {
     Projectile,
     HitPoints,
     HitBody,
-    Fighter,
+    Warrior,
     Swarm,
     Ui,
   ];
