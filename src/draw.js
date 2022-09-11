@@ -40,6 +40,33 @@ const SWORD_BLUE = 0;
 export const SCREEN_HEIGHT = 512 * 1.5;
 export const SCREEN_WIDTH = 683 * 1.5;
 
+const enum FighterAnimations {
+  STANDING = 'STANDING',
+  WALKING = 'WALKING',
+  DASHING = 'DASHING',
+  DEFLECTING = 'DEFLECTING',
+  SLASH_UP = 'SLASH_UP',
+  SLASH_DOWN = 'SLASH_DOWN',
+  JUMP = 'JUMP',
+  JUMP_DOUBLE = 'JUMP_DOUBLE',
+  LAND = 'LAND',
+}
+
+const ANIMATIONS = {
+  FIGHTER_ANIMATIONS: [
+    STANDING: [[0], [Infinity]],
+    WALKING: [[1, 2], [500, 500]],
+    DASHING: [[3, 8], [250, 500]],
+    DEFLECTING: [[9, 10, 11], [250, 500, 500]],
+    SLASH_DOWN: [[24, 25, 26, 27], [250, 250, 250, 250]],
+    SLASH_UP: [[16, 17, 18, 19], [250, 250, 250, 250]],
+    JUMP: [[32], [Infinity]],
+    JUMP_DOUBLE: [[33], [Infinity]],
+    LAND: [[34, 35], [250, 250]],
+  ],
+}
+export const ;
+
 /** @type {HTMLCanvasElement | null} */
 let canvas;
 const images = {};
@@ -56,22 +83,12 @@ class Draw {
   canvas;
   images = {};
   sprites = {};
+  animations = {};
   width = 0;
   height = 0;
   fm = 1; // frame multiplier, updated every frame
   colors = colors;
   enabled = true;
-
-  async init() {
-    const [c] = this.createCanvas('canv', this.width, this.height);
-    canvas = c;
-    this.handleResize();
-    document.getElementById('canvasDiv')?.appendChild(canvas);
-    const img = await this.loadImage('sprites', 'res/packed.png');
-    const imgSize = img.width;
-    const spriteSize = 16;
-    this.sprites = this.loadSprites(img, spriteSize);
-  }
 
   createCanvas = (id, w, h) => {
     const canvas = document.createElement('canvas');
@@ -85,6 +102,14 @@ class Draw {
     return [canvas, ctx];
   };
 
+  /**
+   * @returns {CanvasRenderingContext2D}
+   */
+  getCtx() {
+    //@ts-ignore
+    return canvas.getContext('2d');
+  }
+
   handleResize() {
     if (canvas) {
       canvas.width = this.width = SCREEN_WIDTH;
@@ -93,12 +118,16 @@ class Draw {
     }
   }
 
-  /**
-   * @returns {CanvasRenderingContext2D}
-   */
-  getCtx() {
-    //@ts-ignore
-    return canvas.getContext('2d');
+  async init() {
+    const [c] = this.createCanvas('canv', this.width, this.height);
+    canvas = c;
+    this.handleResize();
+    document.getElementById('canvasDiv')?.appendChild(canvas);
+    const img = await this.loadImage('sprites', 'res/packed.png');
+    const imgSize = img.width;
+    const spriteSize = 16;
+    this.sprites = this.loadSprites(img, spriteSize);
+    this.animations = this.createAnimations(this.sprites);
   }
 
   /**
@@ -198,14 +227,17 @@ class Draw {
    * @param {number} inversion
    * @returns {Sprite}
    */
-  // TODO: Check inversion restrictions
   createInvertedSprite(sprite, inversion) {
     const [c, , , w, h] = sprite;
     const [canvas, ctx] = this.createCanvas('', w, h);
-    ctx.filter = `invert(${inversion.toString()})`;
+    ctx.filter = `invert(${inversion.toString()}%)`;
     // ctx.filter = 'invert(' + inversion.toString() + ')';
     ctx.drawImage(c, 0, 0);
     return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
+  }
+
+  createRotatedSprite(sprite, rotation) {
+
   }
 
   /**
@@ -242,10 +274,12 @@ class Draw {
         sprites['spr_' + n] = sprite;
         const fSprite = (sprites['spr_' + n + '_f'] =
           this.createFlippedSprite(sprite));
-        sprites['spr_' + n + '_h'] = this.createInvertedSprite(sprite, 1);
-        sprites['spr_' + n + '_f_h'] = this.createInvertedSprite(fSprite, 1);
-        sprites['spr_' + n + '_a'] = this.createInvertedSprite(sprite, 2);
-        sprites['spr_' + n + '_f_a'] = this.createInvertedSprite(fSprite, 2);
+        sprites['spr_' + n + '_h'] = this.createInvertedSprite(sprite, 50);
+        sprites['spr_' + n + '_f_h'] = this.createInvertedSprite(fSprite, 50);
+        sprites['spr_' + n + '_a'] = this.createInvertedSprite(sprite, 25);
+        sprites['spr_' + n + '_f_a'] = this.createInvertedSprite(fSprite, 25);
+        sprites['spr_' + n + '_e'] = this.createInvertedSprite(sprite, 100);
+        sprites['spr_' + n + '_f_e'] = this.createInvertedSprite(fSprite, 100);
         n++;
       }
     }

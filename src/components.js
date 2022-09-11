@@ -43,8 +43,8 @@ export class World {
 export class Stunnable {
   isStunned = false;
 
-  constructor(cooldown) {
-    this.cooldown = new Timer(cooldown || 500);
+  constructor(recovery) {
+    this.recovery = new Timer(recovery || 500);
   }
 }
 
@@ -53,8 +53,8 @@ export class Stunnable {
 //   canAct: false;
 //   isActing: false;
 
-//   constructor(type, duration, cooldown) {
-//     this.cooldown = new Timer(cooldown || 500);
+//   constructor(type, duration, recovery) {
+//     this.recovery = new Timer(recovery || 500);
 //     this.duration = new Timer(500);
 //     this.type = type;
 //   }
@@ -75,8 +75,8 @@ export class Bashing {
   canAct = false;
   isActing = false;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 500);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 500);
     this.duration = new Timer(500);
   }
 }
@@ -87,8 +87,8 @@ export class Dashing {
   isActing = false;
   distance = 5;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 750);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 750);
     this.duration = new Timer(500);
   }
 }
@@ -98,8 +98,8 @@ export class Deflecting {
   canAct = false;
   isActing = false;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 250);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 250);
     this.duration = new Timer(1500);
   }
 }
@@ -109,8 +109,8 @@ export class Striking {
   canAct = false;
   isActing = false;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 500);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 500);
     this.duration = new Timer(1500);
   }
 }
@@ -135,8 +135,11 @@ export class Renderable {
   flipped = false;
   highlighted = false;
 
-  constructor({ spriteName, z, scale }) {
+  constructor({ spriteName, z, scale, spriteSet }) {
     this.spriteName = spriteName ?? '';
+    this.spriteSet = spriteSet;
+    this.duration = new Timer(0);
+    this.index = 0;
     this.z = z ?? 0;
     this.scale = scale ?? 1;
   }

@@ -67,6 +67,7 @@ function Input(ecs) {
 
     if (player.keys.ArrowLeft || player.keys.a) {
       physics.facingLeft = true;
+      playerEntity.components.Renderable()
       // handleAnimation
       // handlePhysics - -vx
     }
@@ -288,7 +289,6 @@ function JumpHandler(ecs) {
       entity.actionCap = 0;
     }
     if (actionUses < actionCap && intendsToAct) {
-      // handleAnimation - striking
       entity.actionUses += 1;
       duration.start();
     }
@@ -391,16 +391,27 @@ function RenderActors(ecs) {
     /** @type {PhysicsBody} */
     const { x, y, angle } = entity.get(PhysicsBody);
     /** @type {Renderable} */
+    const selector = entity.get(Renderable);
     const {
       spriteName,
-      circle,
-      rectangle,
+      spriteSet,
+      duration,
+      index,
+      // circle,
+      // rectangle,
       opacity,
       scale,
       flipped,
       highlighted,
       ship,
-    } = entity.get(Renderable);
+    } = selector;
+
+    if (duration.isComplete()) {
+      selector.index++;
+      if (selector.index > ANIMATIONS[`${spriteSet}_ANIMATIONS`][spriteName][0]) {
+        selector.spriteName = 'STANDING';
+      }
+    }
 
     let spritePostFix = '';
     if (flipped) {
@@ -502,7 +513,7 @@ export const getSystems = (ecs) => {
     // new AttackingHighlightFlipper(ecs),
     // new HitHighlightFlipper(ecs),
     // new CameraMover(ecs),
-    // new RenderActors(ecs),
+    new RenderActors(ecs),
     // new RenderUI(ecs),
     new RenderWorld(ecs),
     // new CheckCollisions(ecs),
