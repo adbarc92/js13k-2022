@@ -4,7 +4,7 @@ import { newGame } from './entities.js';
 import { getSystems } from './systems.js';
 import { draw } from './draw.js';
 
-console.log('index.js loaded');
+console.debug('index.js loaded');
 const EXPECTED_FS = 10;
 
 const integrate = (frameTime) => {
@@ -25,8 +25,7 @@ const loop = () => {
     if (frameTime > 4) {
       frameTime = 4;
     }
-    // while (frameTime > 0.0) {
-    // const deltaTime = Math.min(frameTime, EXPECTED_FS);
+
     const deltaTime = frameTime;
     frameTime -= deltaTime;
     const fm = deltaTime / EXPECTED_FS;
@@ -45,7 +44,7 @@ const loop = () => {
 };
 
 export const start = () => {
-  console.log('App start!');
+  console.debug('App start!');
   ecs.register(...getComponents(ecs));
   ecs.process(...getSystems(ecs));
 
@@ -55,18 +54,12 @@ export const start = () => {
 
 window.addEventListener('load', async () => {
   await draw.init();
-  // await game.init();
-  // db.init();
 
   window.addEventListener('resize', () => {
     draw.handleResize();
   });
-
-  // window.game = game;
-  //@ts-ignore
   window.draw = draw;
-  console.log('app loaded');
-  // game.showMenu();
+  console.debug('App loaded.');
 
   start();
 });
