@@ -11,7 +11,7 @@
  * @property {string} [strokeColor]
  */
 
-/** @typedef {[HTMLCanvasElement, number, number, number, number, [number, number]]} Sprite */
+/** @typedef {[HTMLCanvasElement, number, number, number, number]} Sprite */
 
 export const colors = {
   WHITE: '#F8F8F8',
@@ -40,6 +40,61 @@ const SWORD_BLUE = 0;
 export const SCREEN_HEIGHT = 512 * 1.5;
 export const SCREEN_WIDTH = 683 * 1.5;
 
+// const enum FighterAnimations {
+//   STANDING = 'STANDING',
+//   WALKING = 'WALKING',
+//   DASHING = 'DASHING',
+//   DEFLECTING = 'DEFLECTING',
+//   SLASH_UP = 'SLASH_UP',
+//   SLASH_DOWN = 'SLASH_DOWN',
+//   JUMP = 'JUMP',
+//   JUMP_DOUBLE = 'JUMP_DOUBLE',
+//   LAND = 'LAND',
+// }
+
+// Hitbox requires X, Y, width, height
+// Animations require the sprite, its duration, the sound to be played, the associated hitboxes
+
+export const ANIMATIONS = {
+  /* Animations consist of tuples with the first corresponding to the spritesheet index 
+  and the second corresponding to how long it should be on screen.
+  */
+  SWORD_ANIMATIONS: {
+    STANDING: [[0], [Infinity]],
+    WALKING: [
+      [1, 500],
+      [2, 500],
+    ],
+    DASHING: [
+      [3, 250],
+      [8, 500],
+    ],
+    DEFLECTING: [
+      [9, 250],
+      [10, 500],
+      [11, 500],
+    ],
+    SLASH_DOWN: [
+      [24, 250],
+      [25, 250],
+      [26, 250],
+      [27, 250],
+    ],
+    SLASH_UP: [
+      [16, 250],
+      [17, 250],
+      [18, 250],
+      [19, 250],
+    ],
+    JUMP: [[32, Infinity]],
+    JUMP_DOUBLE: [[33, Infinity]],
+    LAND: [
+      [34, 250],
+      [35, 250],
+    ],
+  },
+};
+
 /** @type {HTMLCanvasElement | null} */
 let canvas;
 const images = {};
@@ -62,17 +117,6 @@ class Draw {
   colors = colors;
   enabled = true;
 
-  async init() {
-    const [c] = this.createCanvas('canv', this.width, this.height);
-    canvas = c;
-    this.handleResize();
-    document.getElementById('canvasDiv')?.appendChild(canvas);
-    const img = await this.loadImage('sprites', 'res/packed.png');
-    const imgSize = img.width;
-    const spriteSize = 16;
-    this.sprites = this.loadSprites(img, spriteSize);
-  }
-
   createCanvas = (id, w, h) => {
     const canvas = document.createElement('canvas');
     canvas.id = id;
@@ -85,6 +129,14 @@ class Draw {
     return [canvas, ctx];
   };
 
+  /**
+   * @returns {CanvasRenderingContext2D}
+   */
+  getCtx() {
+    //@ts-ignore
+    return canvas.getContext('2d');
+  }
+
   handleResize() {
     if (canvas) {
       canvas.width = this.width = SCREEN_WIDTH;
@@ -93,12 +145,15 @@ class Draw {
     }
   }
 
-  /**
-   * @returns {CanvasRenderingContext2D}
-   */
-  getCtx() {
-    //@ts-ignore
-    return canvas.getContext('2d');
+  async init() {
+    const [c] = this.createCanvas('canv', this.width, this.height);
+    canvas = c;
+    this.handleResize();
+    document.getElementById('canvasDiv')?.appendChild(canvas);
+    const img = await this.loadImage('sprites', 'res/packed.png');
+    const imgSize = img.width;
+    const spriteSize = 16;
+    this.sprites = this.loadSprites(img, spriteSize);
   }
 
   /**
@@ -177,7 +232,7 @@ class Draw {
   createSprite(img, x, y, w, h) {
     const [canvas, ctx] = this.createCanvas('', w, h);
     ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
-    return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
+    return [canvas, 0, 0, w, h];
   }
 
   /**
@@ -190,7 +245,7 @@ class Draw {
     ctx.translate(w, 0);
     ctx.scale(-1, 1);
     ctx.drawImage(c, 0, 0);
-    return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
+    return [canvas, 0, 0, w, h];
   }
 
   /**
@@ -198,14 +253,13 @@ class Draw {
    * @param {number} inversion
    * @returns {Sprite}
    */
-  // TODO: Check inversion restrictions
   createInvertedSprite(sprite, inversion) {
     const [c, , , w, h] = sprite;
     const [canvas, ctx] = this.createCanvas('', w, h);
-    ctx.filter = `invert(${inversion.toString()})`;
+    ctx.filter = `invert(${inversion.toString()}%)`;
     // ctx.filter = 'invert(' + inversion.toString() + ')';
     ctx.drawImage(c, 0, 0);
-    return [canvas, 0, 0, w, h, this.loadHitBody(canvas, ctx)];
+    return [canvas, 0, 0, w, h];
   }
 
   /**
@@ -226,6 +280,7 @@ class Draw {
    * @returns {Sprite}
    */
   loadSprites(img, spriteSize) {
+    console.log('Loading sprites...');
     const imgSize = img.width;
     const spritesPerImage = imgSize / spriteSize;
     const sprites = {};
@@ -242,46 +297,53 @@ class Draw {
         sprites['spr_' + n] = sprite;
         const fSprite = (sprites['spr_' + n + '_f'] =
           this.createFlippedSprite(sprite));
-        sprites['spr_' + n + '_h'] = this.createInvertedSprite(sprite, 1);
-        sprites['spr_' + n + '_f_h'] = this.createInvertedSprite(fSprite, 1);
-        sprites['spr_' + n + '_a'] = this.createInvertedSprite(sprite, 2);
-        sprites['spr_' + n + '_f_a'] = this.createInvertedSprite(fSprite, 2);
+        sprites['spr_' + n + '_h'] = this.createInvertedSprite(sprite, 50);
+        sprites['spr_' + n + '_f_h'] = this.createInvertedSprite(fSprite, 50);
+        sprites['spr_' + n + '_f_a'] = this.createInvertedSprite(fSprite, 50);
+        sprites['spr_e_' + n + '_h'] = this.createInvertedSprite(sprite, 25);
+        sprites['spr_e_' + n] = this.createInvertedSprite(sprite, 100);
+        sprites['spr_e_' + n + '_f'] = this.createInvertedSprite(fSprite, 100);
+        sprites['spr_e_' + n + '_f_h'] = this.createInvertedSprite(fSprite, 25);
+        sprites['spr_e_' + n + '_f_a'] = this.createInvertedSprite(fSprite, 75);
+        sprites['spr_e_' + n + '_a'] = this.createInvertedSprite(sprite, 75);
+        sprites['spr_e_' + n + '_f_a'] = this.createInvertedSprite(fSprite, 75);
         n++;
       }
     }
+    console.log('Sprites loaded.');
     return sprites;
   }
 
-  loadHitBody(spriteCanvas, spriteCtx) {
-    const hitBody = [];
-    const hitSword = [];
-    const imgData = spriteCtx.getImageData(
-      0,
-      0,
-      spriteCanvas.width,
-      spriteCanvas.height
-    );
-    let x = 0,
-      y = 0;
-    for (let i = 0; i < imgData.length; i += 4) {
-      if (
-        imgData[i] === SWORD_RED &&
-        imgData[i + 1] === SWORD_BLUE &&
-        imgData[i + 2] === SWORD_GREEN
-      ) {
-        hitSword.push(x, y);
-      } else if (imgData[i]) {
-        hitBody.push(x, y);
-      }
-      if (x + 1 === spriteCanvas.width) {
-        x = 0;
-        y += 1;
-      } else {
-        x += 1;
-      }
-    }
-    return [hitBody, hitSword];
-  }
+  // loadHitBody(spriteCanvas, spriteCtx) {
+  //   const hitBody = [];
+  //   const hitSword = [];
+  //   const imgData = spriteCtx.getImageData(
+  //     0,
+  //     0,
+  //     spriteCanvas.width,
+  //     spriteCanvas.height
+  //   );
+  //   let x = 0,
+  //     y = 0;
+  //   for (let i = 0; i < imgData.length; i += 4) {
+  //     if (
+  //       imgData[i] === SWORD_RED &&
+  //       imgData[i + 1] === SWORD_BLUE &&
+  //       imgData[i + 2] === SWORD_GREEN
+  //     ) {
+  //       hitSword.push(x, y);
+  //     } else if (imgData[i]) {
+  //       hitBody.push(x, y);
+  //     }
+  //     if (x + 1 === spriteCanvas.width) {
+  //       x = 0;
+  //       y += 1;
+  //     } else {
+  //       x += 1;
+  //     }
+  //   }
+  //   return [hitBody, hitSword];
+  // }
 
   /**
    * @param {number} x

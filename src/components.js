@@ -12,15 +12,6 @@ export const WORLD_WIDTH = WORLD_WIDTH_TILES * TILE_SIZE * TILE_SCALE;
 export const WORLD_HEIGHT = WORLD_HEIGHT_TILES * TILE_SIZE * TILE_SCALE;
 
 export class PhysicsBody {
-  vx = 0;
-  vy = 0;
-  ax = 0;
-  ay = 0;
-  mass = 1;
-  acc = false;
-  accRate = 0.3;
-  facingLeft = true;
-
   /**
    * @param {number} x
    * @param {number} y
@@ -29,22 +20,31 @@ export class PhysicsBody {
   constructor(x, y) {
     this.x = x;
     this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
+    this.mass = 1;
+    this.acc = false;
+    this.accRate = 0.3;
+    this.facingLeft = true;
   }
 }
 
 export class World {
-  width = 32; // WORLD_WIDTH
-  height = 32; // WORLD_HEIGHT
+
   constructor(tiles) {
     this.tiles = tiles || [];
+    this.width = 32; // WORLD_WIDTH
+    this.height = 32; // WORLD_HEIGHT
   }
 }
 
 export class Stunnable {
   isStunned = false;
 
-  constructor(cooldown) {
-    this.cooldown = new Timer(cooldown || 500);
+  constructor(recovery) {
+    this.recovery = new Timer(recovery || 500);
   }
 }
 
@@ -53,8 +53,8 @@ export class Stunnable {
 //   canAct: false;
 //   isActing: false;
 
-//   constructor(type, duration, cooldown) {
-//     this.cooldown = new Timer(cooldown || 500);
+//   constructor(type, duration, recovery) {
+//     this.recovery = new Timer(recovery || 500);
 //     this.duration = new Timer(500);
 //     this.type = type;
 //   }
@@ -75,8 +75,8 @@ export class Bashing {
   canAct = false;
   isActing = false;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 500);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 500);
     this.duration = new Timer(500);
   }
 }
@@ -87,8 +87,8 @@ export class Dashing {
   isActing = false;
   distance = 5;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 750);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 750);
     this.duration = new Timer(500);
   }
 }
@@ -98,8 +98,8 @@ export class Deflecting {
   canAct = false;
   isActing = false;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 250);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 250);
     this.duration = new Timer(1500);
   }
 }
@@ -109,8 +109,8 @@ export class Striking {
   canAct = false;
   isActing = false;
 
-  constructor(duration, cooldown) {
-    this.cooldown = new Timer(cooldown || 500);
+  constructor(duration, recovery) {
+    this.recovery = new Timer(recovery || 500);
     this.duration = new Timer(1500);
   }
 }
@@ -127,16 +127,27 @@ export class Shardable {
   }
 }
 
-export class Comboable {
-  comboCount = 0;
-}
+// export class Animation {
+//   start = 0;
+//   constructor(name, duration, frames, hitboxes, sounds) {
+//     this.name = name || '';
+//     this.duration = duration || 1000;
+//     this.frames = frames;
+//     this.hitboxes = hitboxes;
+//     this.sounds = sounds;
+//   }
+// }
 
 export class Renderable {
   flipped = false;
   highlighted = false;
 
-  constructor({ spriteName, z, scale }) {
+  constructor({ spriteName, z, scale, spriteSetName }) {
     this.spriteName = spriteName ?? '';
+    this.spriteSetName = spriteSetName;
+    this.animation = 'STANDING';
+    this.timeToNextSprite = new Timer();
+    this.currentSpriteIdx = 0;
     this.z = z ?? 0;
     this.scale = scale ?? 1;
   }
@@ -155,19 +166,12 @@ export class LimitedLifetime {
 }
 
 export class Player {
-  /** @type {Record<string, boolean>} */
-  keys = {};
-  score = 0;
-  crates = 0;
-  gameOver = false;
-
-  /** @param {string} key */
-  setKeyDown(key) {
-    this.keys[key] = true;
-  }
-  /** @param {string} key */
-  setKeyUp(key) {
-    this.keys[key] = false;
+  constructor() {
+    this.keys = {};
+    this.combo = 0;
+    this.gameOver = false;
+    this.gameStarted = false;
+    this.gameRunning = false;
   }
 }
 
@@ -217,13 +221,7 @@ export class HitBody {
   }
 }
 
-export class Fighter {
-  constructor(x, y) {
-    this.sprites = {};
-    this.x = 0;
-    this.y = 0;
-  }
-}
+export class Warrior {}
 
 export class Swarm {
   waveNumber = 0;
@@ -256,7 +254,6 @@ export const getComponents = () => {
     Deflecting,
     Striking,
     Shardable,
-    Comboable,
     World,
     Renderable,
     LimitedLifetime,
@@ -268,7 +265,7 @@ export const getComponents = () => {
     Projectile,
     HitPoints,
     HitBody,
-    Fighter,
+    Warrior,
     Swarm,
     Ui,
   ];
