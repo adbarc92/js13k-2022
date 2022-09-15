@@ -11,5 +11,18 @@
   "parserOptions": {
     "ecmaVersion": 2021,
     "sourceType": "module"
+  },
+  "plugins": ["prettier"],
+  "rules": {
+    "prettier/prettier": [
+      "warn",
+      {
+        "bracketSpacing": true,
+        "singleQuote": true,
+        "tabWidth": 2,
+        "trailingComma": "es5"
+      }
+    ],
+    "no-unused-vars": "warn"
   }
 }
