@@ -3,10 +3,9 @@ import {
   Ai,
   AttackingHighlightRender,
   Bashing,
-  Comboable,
   Dashing,
   Deflecting,
-  Fighter,
+  Warrior,
   HitBody,
   HitHighlightRender,
   HitPoints,
@@ -21,14 +20,18 @@ import {
   Ui,
   WORLD_HEIGHT,
   WORLD_WIDTH,
+  Camera,
 } from './components.js';
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from './draw.js';
 
 let uiId = '';
 export const getUiEntity = (ecs) => ecs.get(uiId);
-let playerFighterId = '';
-export const getPlayerEntity = (ecs) => ecs.get(playerFighterId);
-export const isPlayerEntity = (entity) => entity.id === playerFighterId;
+let playerWarriorId = '';
+/**
+ * @returns {Entity}
+ */
+export const getPlayerEntity = (ecs) => ecs.get(playerWarriorId);
+export const isPlayerEntity = (entity) => entity.id === playerWarriorId;
 let swarmId = '';
 export const getSwarmEntity = (ecs) => ecs.get(swarmId);
 
@@ -36,11 +39,15 @@ let worldId = '';
 export const getWorldId = () => worldId;
 export const getWorldEntity = (ecs) => ecs.get(worldId);
 
+let cameraId = '';
+export const getCameraId = () => cameraId;
+export const getCameraEntity = (ecs) => ecs.get(getCameraId);
+
 export const createPlayer = (ecs) => {
   const ent = ecs.create();
   ent.add(
     new Player(),
-    new Fighter(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
+    new Warrior(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2),
     new PhysicsBody(0, 0),
     new Stunnable(),
     new Jumping(),
@@ -49,13 +56,23 @@ export const createPlayer = (ecs) => {
     new Deflecting(),
     new Striking(),
     new Shardable(),
-    new Comboable(),
-    new Renderable({ spriteName: '', z: 1, scale: 1 }),
+    new Renderable({
+      spriteName: 'spr_',
+      z: 1,
+      scale: 1,
+      spriteSetName: 'SWORD',
+    }),
     new Ai(),
     new HitHighlightRender(),
     new HitPoints(20)
   );
-  playerFighterId = ent.id;
+  playerWarriorId = ent.id;
+};
+
+export const createCamera = (ecs) => {
+  const ent = ecs.create();
+  ent.add(new Camera());
+  cameraId = ent.id;
 };
 
 export const createWorld = (ecs) => {
@@ -64,11 +81,8 @@ export const createWorld = (ecs) => {
   worldId = ent.id;
 };
 
-export const createEnemyFighter = (ecs) => {
-  const physics = new PhysicsBody();
-
+export const createEnemyWarrior = (ecs) => {
   const ent = ecs.create();
-
   ent.add(
     new PhysicsBody(),
     new Stunnable(),
@@ -78,8 +92,12 @@ export const createEnemyFighter = (ecs) => {
     new Deflecting(),
     new Striking(),
     new Shardable(),
-    new Comboable(),
-    new Renderable({ spriteName: '', z: 1, scale: 1 }),
+    new Renderable({
+      spriteName: 'spr_e_',
+      z: 1,
+      scale: 1,
+      spriteSetName: 'SWORD',
+    }),
     new LimitedLifetime(),
     new Ai(),
     new HitBody(),
@@ -101,4 +119,4 @@ export const newGame = (ecs) => {
   createWorld(ecs);
 };
 
-function EnemyFighterSpawner() {}
+function EnemyWarriorSpawner() {}

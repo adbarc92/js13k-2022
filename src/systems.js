@@ -7,7 +7,6 @@ import {
   Deflecting,
   Striking,
   Shardable,
-  Comboable,
   Renderable,
   LimitedLifetime,
   Player,
@@ -16,7 +15,7 @@ import {
   Projectile,
   HitPoints,
   HitBody,
-  Fighter,
+  Warrior,
   Swarm,
   Ui,
   World,
@@ -27,29 +26,29 @@ import {
   TILE_SIZE,
 } from './components.js';
 import {
-  createEnemyFighter,
+  createEnemyWarrior,
   getWorldEntity,
   getPlayerEntity,
   getSwarmEntity,
 } from './entities.js';
-import { colors, draw } from './draw.js';
+import { colors, draw, ANIMATIONS } from './draw.js';
+import { distance } from './utils.js';
+
+const WALKING_SPEED = 2;
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Input(ecs) {
-  const selector = ecs.select(Player, PhysicsBody);
-  const playerEntity = getPlayerEntity(ecs);
-
   /** @type {KeyboardEvent[]} */
   let keysDown = [];
   /** @type {KeyboardEvent[]} */
   let keysUp = [];
 
   window.addEventListener('keydown', (ev) => {
-    keysDown.push(ev);
+    keysDown.push(ev.key);
   });
 
   window.addEventListener('keyup', (ev) => {
-    keysUp.push(ev);
+    keysUp.push(ev.key);
   });
 
   /**
@@ -57,52 +56,37 @@ function Input(ecs) {
    * @param {PhysicsBody} physics
    * @param {HitPoints} hp
    */
-  const handleKeyUpdate = (player, physics) => {
-    // TODO: Add game end state
-    // pause game
+  const handleKeyUpdate = (player, physics, hp) => {
+    const playerEntity = getPlayerEntity(ecs);
 
-    if (playerEntity.components.Stunnable?.isStunned) {
+    if (playerEntity.components.Stunnable?.isStunned || hp) {
       return;
     }
 
     if (player.keys.ArrowLeft || player.keys.a) {
       physics.facingLeft = true;
-      playerEntity.components.Renderable()
-      // handleAnimation
-      // handlePhysics - -vx
+      physics.vx = WALKING_SPEED;
     }
 
     if (player.keys.ArrowRight || player.keys.d) {
       physics.facingLeft = false;
-      // handleAnimation
-      // handlePhysics - +vx
+      physics.vx = -WALKING_SPEED;
     }
 
     if (player.keys.ArrowUp || player.keys.w) {
-      const jumping = playerEntity.components.Jumping;
-      if (jumping.isJumping && !jumping.hasDoubleJumped) {
-        jumping.intendsToJump = true;
-        // handleAnimation - double jump
-        // handlePhysics - +vy, -ay
-      } else {
-        jumping.intendsToJump = true;
-        // handleAnimation - jumping
-        // handlePhysics - +vy, -ay
-      }
+      playerEntity.get(Jumping).intendsToJump = true;
     }
 
     if (player.keys.ArrowDown || player.keys.s) {
-      playerEntity.components.Deflecting.intendsToDeflect = true;
+      playerEntity.get(Deflecting).intendsToDeflect = true;
     }
 
     if (player.keys.z || player.keys.Shift) {
-      playerEntity.components.Bashing.intendsToBash = true;
-      // checkCollision
-      // setStunned
+      playerEntity.get(Bashing).intendsToBash = true;
     }
 
     if (player.keys.x || player.keys.Enter) {
-      playerEntity.components.Striking.intendsToStrike = true;
+      playerEntity.get(Striking).intendsToStrike = true;
     }
   };
 
@@ -115,21 +99,22 @@ function Input(ecs) {
     /** @type {HitPoints} */
     const hp = entity.get(HitPoints);
 
-    keysDown.forEach((ev) => {
+    keysDown.forEach((key) => {
       if (!player.gameStarted) {
         player.gameStarted = true;
       }
-      player.setKeyDown(ev.key);
-      // handleKeyDown(ev.key, player, physics);
+      player.keys[key] = true;
     });
-    keysUp.forEach((ev) => {
-      player.setKeyUp(ev.key);
-      // reset the player's horizontal velocity
+
+    keysUp.forEach((key) => {
+      player.keys[key] = false;
     });
 
     if (player.gameStarted) {
       handleKeyUpdate(player, physics, hp);
     }
+
+    console.log(`keysDown: ${keysDown}`);
 
     if (keysUp.length) {
       keysUp = [];
@@ -139,6 +124,7 @@ function Input(ecs) {
     }
   };
 
+  const selector = ecs.select(Player, PhysicsBody);
   this.update = () => selector.iterate(this.iterate);
 }
 
@@ -156,7 +142,7 @@ function EnemySpawner(ecs) {
       for (let i = 0; i < swarm.waveNumber + 5; i += 2) {
         let { x } = player.PhysicsBody;
         x = i % 2 === 0 ? x - 10 : x + 10;
-        createEnemyFighter(x, 20);
+        createEnemyWarrior(x, 20);
       }
     }
   };
@@ -332,7 +318,7 @@ function HitHighlightFlipper(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function CameraMover(ecs) {
-  const selector = ecs.select(Camera, Fighter, PhysicsBody);
+  const selector = ecs.select(Camera, Warrior, PhysicsBody);
 
   /** @param {Entity} entity */
   this.iterate = (entity) => {
@@ -368,9 +354,6 @@ function CameraMover(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderActors(ecs) {
-  const sprites = ecs.select(PhysicsBody, Renderable);
-  const camera = ecs.select(Camera);
-
   let renderList = [];
 
   /**
@@ -389,27 +372,38 @@ function RenderActors(ecs) {
   /** @param {Entity} entity */
   const drawEntity = (entity) => {
     /** @type {PhysicsBody} */
-    const { x, y, angle } = entity.get(PhysicsBody);
+    const { x, y } = entity.get(PhysicsBody);
+    /** @type {Striking} */
+    const { isActing: isStriking } = entity.get(Striking);
     /** @type {Renderable} */
-    const selector = entity.get(Renderable);
+    const renderable = entity.get(Renderable);
+    console.log(`renderable: ${JSON.stringify(renderable)}`);
     const {
       spriteName,
-      spriteSet,
-      duration,
-      index,
-      // circle,
-      // rectangle,
+      spriteSetName,
+      timeToNextSprite,
+      animation,
+      currentSpriteIdx,
       opacity,
       scale,
       flipped,
       highlighted,
-      ship,
-    } = selector;
+    } = renderable;
 
-    if (duration.isComplete()) {
-      selector.index++;
-      if (selector.index > ANIMATIONS[`${spriteSet}_ANIMATIONS`][spriteName][0]) {
-        selector.spriteName = 'STANDING';
+    const animationSprites =
+      ANIMATIONS[`${spriteSetName}_ANIMATIONS`][animation][0];
+
+    if (timeToNextSprite.isComplete()) {
+      renderable.currentSpriteIdx++;
+      if (renderable.currentSpriteIdx > animationSprites.length) {
+        renderable.spriteName = 'STANDING';
+        renderable.currentSpriteIdx = 0;
+      } else {
+        renderable.timeToNextSprite.start(
+          ANIMATIONS[`${spriteSetName}_ANIMATIONS`][animation][1][
+            currentSpriteIdx
+          ]
+        );
       }
     }
 
@@ -420,31 +414,16 @@ function RenderActors(ecs) {
     if (highlighted) {
       spritePostFix += '_h';
     }
+    if (isStriking) {
+      spritePostFix += '_a';
+    }
 
     draw.setOpacity(opacity);
     if (spriteName) {
-      draw.drawSprite(spriteName + spritePostFix, x, y, angle, scale);
-    }
-    if (circle) {
-      const { r, color } = circle;
-      draw.drawCircle(x, y, r * scale, color);
-    }
-    if (rectangle) {
-      const { w, h, color } = rectangle;
-      draw.drawRect(x, y, w * scale, h * scale, color);
-    }
-    if (ship) {
-      const spriteList = ship.getHitCirclePositions(angle);
-      for (const {
-        offset: [eX, eY],
-        spr,
-      } of spriteList) {
-        draw.drawSprite(spr + spritePostFix, x + eX, y + eY, angle, scale);
-      }
-      const turretList = ship.getTurretPositions(angle);
-      for (const { spr, physics } of turretList) {
-        draw.drawSprite(spr, physics.x, physics.y, physics.angle, scale);
-      }
+      const idx = animationSprites[renderable.currentSpriteIdx];
+      const spriteId = spriteName + idx + spritePostFix;
+      console.log(`spriteId: ${spriteId}`);
+      draw.drawSprite(spriteName + idx + spritePostFix, x, y, 0, scale);
     }
     draw.setOpacity(1);
   };
@@ -459,8 +438,35 @@ function RenderActors(ecs) {
     });
   };
 
+  const isOffscreen = (x, y, x2, y2, w, h) => {
+    distance(x + w / 2, y + h / 2, x2, y2) < draw.SCREEN_WIDTH / 2 + 160;
+  };
+
   /** @param {Entity} entity */
-  const drawRelativeToCamera = (entity) => {};
+  const drawRelativeToCamera = (entity) => {
+    /** @type {Camera} */
+    const { x, y, w, h } = entity.get(Camera);
+    const ctx = draw.getCtx();
+    ctx.save();
+    ctx.translate(-x, -y);
+    for (const { entity } of renderList) {
+      const { x: x2, y: y2 } = entity.get(PhysicsBody);
+      if (!isOffscreen(x, y, x2, y2, w, h)) {
+        drawEntity(entity);
+      } else {
+        console.log('it is offscreen');
+      }
+    }
+  };
+
+  this.update = () => {
+    const sprites = ecs.select(PhysicsBody, Renderable);
+    console.log(`sprites: ${JSON.stringify(sprites)}`);
+    const camera = ecs.select(Camera);
+    console.log(`camera: ${camera}`);
+    sprites.iterate(addToRenderList);
+    camera.iterate(drawRelativeToCamera);
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
