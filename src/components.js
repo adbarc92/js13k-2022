@@ -12,15 +12,6 @@ export const WORLD_WIDTH = WORLD_WIDTH_TILES * TILE_SIZE * TILE_SCALE;
 export const WORLD_HEIGHT = WORLD_HEIGHT_TILES * TILE_SIZE * TILE_SCALE;
 
 export class PhysicsBody {
-  vx = 0;
-  vy = 0;
-  ax = 0;
-  ay = 0;
-  mass = 1;
-  acc = false;
-  accRate = 0.3;
-  facingLeft = true;
-
   /**
    * @param {number} x
    * @param {number} y
@@ -29,14 +20,23 @@ export class PhysicsBody {
   constructor(x, y) {
     this.x = x;
     this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.ax = 0;
+    this.ay = 0;
+    this.mass = 1;
+    this.acc = false;
+    this.accRate = 0.3;
+    this.facingLeft = true;
   }
 }
 
 export class World {
-  width = 32; // WORLD_WIDTH
-  height = 32; // WORLD_HEIGHT
+
   constructor(tiles) {
     this.tiles = tiles || [];
+    this.width = 32; // WORLD_WIDTH
+    this.height = 32; // WORLD_HEIGHT
   }
 }
 
