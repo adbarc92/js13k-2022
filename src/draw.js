@@ -82,16 +82,32 @@ const getSprite = (spriteName) => {};
 
 class Draw {
   /** @type {HTMLCanvasElement | null} */
-  constructor() {}
+  constructor() {
+    this.canvas = this.createCanvas('canv', SCREEN_WIDTH, SCREEN_HEIGHT);
+    this.ctx = this.canvas.getContext('2d');
+  }
 
-  createCanvas(id, w, h) {}
+  createCanvas(id, w, h) {
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('id', id);
+    canvas.setAttribute('width', w);
+    canvas.setAttribute('height', h);
+  }
+
+  getCanvas(id) {
+    return document.getElementById(id) || this.createCanvas(id, SCREEN_WIDTH, SCREEN_HEIGHT);
+  }
 
   /**
    * @returns {CanvasRenderingContext2D}
    */
-  getCtx() {}
+  getCtx(id) {
+    return this.getCanvas(id).getContext('2d');
+  }
 
-  handleResize() {}
+  handleResize(w, h) {
+    
+  }
 
   async init() {}
 
