@@ -74,18 +74,19 @@ export const ANIMATIONS = {
 
 /** @type {HTMLCanvasElement | null} */
 
-/**
- * @param {string} spriteName
- * @returns {Sprite}
- */
-const getSprite = (spriteName) => {};
-
 class Draw {
   /** @type {HTMLCanvasElement | null} */
   constructor() {
     this.canvas = this.createCanvas('canv', SCREEN_WIDTH, SCREEN_HEIGHT);
     this.ctx = this.canvas.getContext('2d');
+    this.sprites = {};
   }
+
+  /**
+   * @param {string} spriteName
+   * @returns {Sprite}
+   */
+  getSprite = (spriteName) => this.sprites[spriteName];
 
   createCanvas(id, w, h) {
     const canvas = document.createElement('canvas');
@@ -95,7 +96,10 @@ class Draw {
   }
 
   getCanvas(id) {
-    return document.getElementById(id) || this.createCanvas(id, SCREEN_WIDTH, SCREEN_HEIGHT);
+    return (
+      document.getElementById(id) ||
+      this.createCanvas(id, SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
   }
 
   /**
@@ -105,9 +109,7 @@ class Draw {
     return this.getCanvas(id).getContext('2d');
   }
 
-  handleResize(w, h) {
-    
-  }
+  handleResize(w, h) {}
 
   async init() {}
 
