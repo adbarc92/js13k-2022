@@ -7,7 +7,13 @@
  * @property {string} [strokeColor]
  */
 
+/*
+A sprite consists of its sheet, its X location on that sheet, its Y location on
+the sheet, its width, and its height.
+*/
 /** @typedef {[HTMLCanvasElement, number, number, number, number]} Sprite */
+
+const IMAGE_FILES = [];
 
 export const colors = {
   WHITE: '#F8F8F8',
@@ -74,28 +80,31 @@ export const ANIMATIONS = {
 
 /** @type {HTMLCanvasElement | null} */
 
-/**
- * @param {string} spriteName
- * @returns {Sprite}
- */
-const getSprite = (spriteName) => {};
-
 class Draw {
   /** @type {HTMLCanvasElement | null} */
   constructor() {
-    this.canvas = this.createCanvas('canv', SCREEN_WIDTH, SCREEN_HEIGHT);
     this.ctx = this.canvas.getContext('2d');
+    this.sprites = {};
+    this.height = 0;
+    this.width = 0;
+    this.canvas = this.createCanvas('canv', this.width, this.height);
   }
 
+  /** */
   createCanvas(id, w, h) {
     const canvas = document.createElement('canvas');
     canvas.setAttribute('id', id);
     canvas.setAttribute('width', w);
     canvas.setAttribute('height', h);
+    return [canvas, canvas.getContext('2d')];
   }
 
+  /** */
   getCanvas(id) {
-    return document.getElementById(id) || this.createCanvas(id, SCREEN_WIDTH, SCREEN_HEIGHT);
+    return (
+      document.getElementById(id) ||
+      this.createCanvas(id, SCREEN_WIDTH, SCREEN_HEIGHT)
+    );
   }
 
   /**
@@ -105,11 +114,24 @@ class Draw {
     return this.getCanvas(id).getContext('2d');
   }
 
-  handleResize(w, h) {
-    
+  /** */
+  handleResize() {
+    // if (this.canvas) {
+    this.canvas.height = SCREEN_HEIGHT;
+    this.canvas.width = SCREEN_WIDTH;
+    // }
   }
 
-  async init() {}
+  /**
+   * Resizes the canvas, loads the images, and creates sprites.
+   */
+  async init() {
+    this.handleResize();
+    const img = await this.loadImage('sprites', 'res/sprites.png');
+    const imgSize = img.width;
+    const spriteSize = 16;
+    this.loadSprites(img, spriteSize, spriteSize);
+  }
 
   /**
    * @param {number} n
@@ -130,7 +152,9 @@ class Draw {
    * @param {string} spriteName
    * @returns {Sprite}
    */
-  getSprite(spriteName) {}
+  getSprite(spriteName) {
+    return this.sprites[spriteName];
+  }
 
   /**
    * @param {string} sprite
@@ -140,7 +164,16 @@ class Draw {
    * @param {number} [scale]
    * @param {CanvasRenderingContext2D} [ctx]
    */
-  drawSprite(sprite, x, y, rotation, scale, ctx) {}
+  drawSprite(sprite, x, y, rotation, scale) {
+    scale = scale || 1;
+    const [sprImg, sprX, sprY, sprW, sprH] = sprite;
+    this.ctx?.scale(scale);
+    this.ctx?.rotate((rotation * Math.PI) / 180);
+    this.ctx?.save();
+
+    this.ctx?.drawImage(sprImg, sprX, sprY, sprW, sprH, x, y, sprW, sprH);
+    this.ctx?.restore();
+  }
 
   /**
    * @param {HTMLImageElement | HTMLCanvasElement} img
@@ -150,30 +183,109 @@ class Draw {
    * @param {number} h
    * @returns {Sprite}
    */
-  createSprite(img, x, y, w, h) {}
+  createSprite(img, x, y, w, h) {
+    const [canvas, ctx] = this.createCanvas('', w, h);
+    ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+    return [canvas, 0, 0, w, h];
+  }
 
   /**
    * @param {Sprite} sprite
    * @returns {Sprite}
    */
-  createFlippedSprite(sprite) {}
+  createFlippedSprite(sprite) {
+    const [i, , , w, h] = sprite;
+    const [canvas, ctx] = this.createCanvas('', w, h);
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(i, 0, 0);
+    return [canvas, 0, 0, w, h];
+  }
 
   /**
    * @param {Sprite} sprite
    * @param {number} inversion
    * @returns {Sprite}
    */
-  createInvertedSprite(sprite, inversion) {}
+  createInvertedSprite(sprite, inversion) {
+    const [i, x, y, w, h] = sprite;
+    const [canvas, ctx] = this.createCanvas('', w, h);
+    ctx.filter.invert(`${inversion.toString()}%`);
+    ctx.drawImage(i, x, y, w, h, 0, 0, w, h);
+    return [canvas, 0, 0, w, h];
+  }
+
+  /**
+   * Creates normal, flipped, and inverted variants for a given sprite.
+   */
+  createSprites(img, x, y, w, h, n) {
+    const newSprite = (this.sprites[`spr_${n}`] = this.createSprite(
+      img,
+      x,
+      y,
+      w,
+      h
+    ));
+    const newSpriteF = (this.sprites[`spr_${n}_f`] =
+      this.createFlippedSprite(newSprite));
+    ['_h', '_e_h', '_e_a', '_e'].forEach((prefix, i) => {
+      this.sprites[`spr_${n}${prefix}`] = this.createInvertedSprite(
+        newSprite,
+        (i + 1) * 25
+      );
+      this.sprites[`spr_${n}${prefix}_f`] = this.createInvertedSprite(
+        newSpriteF,
+        (i + 1) * 25
+      );
+    });
+
+    // this.sprites[`spr_${n}_e`] = this.createInvertedSprite(newSprite, 100);
+    // this.sprites[`spr_${n}_e_f`] = this.createInvertedSprite(newSpriteF, 100);
+    // this.sprites[`spr_${n}_e_a`] = this.createInvertedSprite(newSprite, 75);
+    // this.sprites[`spr_${n}_e_f_a`] = this.createInvertedSprite(newSpriteF, 75);
+    // this.sprites[`spr_${n}_e_h`] = this.createInvertedSprite(newSprite, 50);
+    // this.sprites[`spr_${n}_e_f_h`] = this.createInvertedSprite(newSpriteF, 50);
+    // this.sprites[`spr_${n}_h`] = this.createInvertedSprite(newSprite, 25);
+    // this.sprites[`spr_${n}_f_h`] = this.createInvertedSprite(newSpriteF, 25);
+  }
+
+  /**
+   * @returns Promise<HTMLImageElement[]>
+   */
+  loadImages() {
+    const imgPromises = [];
+    for (const imgFile of IMAGE_FILES) {
+      imgPromises.push(this.loadImage(imgFile));
+    }
+    return Promise.all(imgPromises);
+  }
 
   /**
    * @returns Promise<HTMLImageElement>
    */
-  loadImage(imageName, imagePath) {}
+  loadImage(imageName, imagePath) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        this.images[imageName] = img;
+        resolve(img);
+      };
+      img.src = imagePath;
+    });
+  }
 
   /**
    * @returns {Sprite}
    */
-  loadSprites(img, spriteSize) {}
+  loadSprites(img, spriteHeight, spriteWidth) {
+    let n = 0;
+    for (let y = 0; y < spriteHeight; y++) {
+      for (let x = 0; x < spriteWidth; x++) {
+        this.createSprites(img, x, y, spriteWidth, spriteHeight, n);
+        n += 1;
+      }
+    }
+  }
 
   /**
    * @param {number} x
