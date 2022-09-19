@@ -216,21 +216,14 @@ class Draw {
   }
 
   /**
-   * Creates normal, flipped, and inverted variants for a given sprite.
+   * Creates flipped and inverted variants for a given sprite.
    */
-  createSprites(img, x, y, w, h, n) {
-    const newSprite = (this.sprites[`spr_${n}`] = this.createSprite(
-      img,
-      x,
-      y,
-      w,
-      h
-    ));
+  createSpriteVariants(sprite, n) {
     const newSpriteF = (this.sprites[`spr_${n}_f`] =
-      this.createFlippedSprite(newSprite));
+      this.createFlippedSprite(sprite));
     ['_h', '_e_h', '_e_a', '_e'].forEach((prefix, i) => {
       this.sprites[`spr_${n}${prefix}`] = this.createInvertedSprite(
-        newSprite,
+        sprite,
         (i + 1) * 25
       );
       this.sprites[`spr_${n}${prefix}_f`] = this.createInvertedSprite(
@@ -281,7 +274,14 @@ class Draw {
     let n = 0;
     for (let y = 0; y < spriteHeight; y++) {
       for (let x = 0; x < spriteWidth; x++) {
-        this.createSprites(img, x, y, spriteWidth, spriteHeight, n);
+        const newSprite = (this.sprites[`spr_${n}`] = this.createSprite(
+          img,
+          x,
+          y,
+          spriteWidth,
+          spriteHeight
+        ));
+        this.createSpriteVariants(newSprite, n);
         n += 1;
       }
     }
