@@ -38,6 +38,7 @@ Gather enough Shards of Death to slay the Divider.
 * [] Playable
 * [] Gamepad support
 * [] Touch support
+* [] Sprite sizes can vary based on the imported sheet.
 
 
 ## Acknowledgements
