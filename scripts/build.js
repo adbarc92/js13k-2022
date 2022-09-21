@@ -26,7 +26,7 @@ function getAllFilePaths(dirPath, arrayOfFiles) {
 
   files.forEach(function (file) {
     if (fs.statSync(dirPath + '/' + file).isDirectory()) {
-      arrayOfFiles = getAllFiles(dirPath + '/' + file, arrayOfFiles);
+      arrayOfFiles = getAllFilePaths(dirPath + '/' + file, arrayOfFiles);
     } else {
       arrayOfFiles.push(path.join(dirPath, '/', file));
     }
@@ -73,20 +73,15 @@ function processCodeFile(text) {
 }
 
 const build = async () => {
-  console.log('Concat files...');
+  console.log('Create dist...');
 
   let htmlFile = fs.readFileSync(`${__dirname}/../index.html`).toString();
 
   const resDistDir = path.resolve(`${__dirname}/../dist/res/`);
-
   const srcDistDir = path.resolve(`${__dirname}/../dist/src/`);
-
-  console.log('Mkdir');
   fs.mkdirSync(resDistDir, { recursive: true });
   fs.mkdirSync(srcDistDir, { recursive: true });
-  console.log('Copy');
-  await execAsync(` cp -r ${__dirname}/../res/* ${resDistDir}`);
-  // await execAsync(`mkdir --parents ${srcDistDir}`);
+  await execAsync(`cp -r ${__dirname}/../res/* ${resDistDir}`);
 
   const terserOptions = {
     passes: 3,
@@ -101,6 +96,7 @@ const build = async () => {
 
   console.log('\nMinify code...');
   const filePaths = getAllFilePaths(path.resolve(__dirname + '/../src'));
+  console.log('files to concat and minify:\n', filePaths.join('\n '));
   const indexFile = filePaths.reduce((resultFile, currentFilePath) => {
     const currentFile = fs.readFileSync(currentFilePath).toString();
     resultFile += processCodeFile(currentFile);
@@ -112,12 +108,12 @@ const build = async () => {
   // console.log('RETURN EARLY');
   // return;
 
-  // try {
-  //   await minifyFiles([srcDistDir + '/index.js'], terserOptions);
-  // } catch (e) {
-  //   console.error('Error during minify', e);
-  //   return;
-  // }
+  try {
+    await minifyFiles([srcDistDir + '/index.js'], terserOptions);
+  } catch (e) {
+    console.error('Error during minify', e);
+    return;
+  }
 
   // await execAsync(
   //   `${__dirname}/../node_modules/.bin/terser --compress ${terserArgs.join(

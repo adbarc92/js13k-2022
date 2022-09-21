@@ -1,7 +1,7 @@
-import { getComponents } from './components.js';
+// import { getComponents } from './components.js';
+// import { newGame } from './entities.js';
+// import { getSystems } from './systems.js';
 import { ecs } from './ecs.js';
-import { newGame } from './entities.js';
-import { getSystems } from './systems.js';
 import { draw } from './draw.js';
 
 console.debug('index.js loaded');
@@ -45,18 +45,18 @@ const loop = () => {
 
 export const start = () => {
   console.debug('App start!');
-  ecs.register(...getComponents(ecs));
-  ecs.process(...getSystems(ecs));
+  // ecs.register(...getComponents(ecs));
+  // ecs.process(...getSystems(ecs));
 
-  newGame(ecs);
-  loop();
+  // newGame(ecs);
+  // loop();
 };
 
 window.addEventListener('load', async () => {
-  await draw.init();
+  // await draw.init();
 
   window.addEventListener('resize', () => {
-    draw.handleResize();
+    // draw.handleResize();
   });
   window.draw = draw;
   console.debug('App loaded.');

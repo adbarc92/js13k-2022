@@ -13,7 +13,7 @@ the sheet, its width, and its height.
 */
 /** @typedef {[HTMLCanvasElement, number, number, number, number]} Sprite */
 
-const IMAGE_FILES = [];
+const IMAGE_FILES = ['sprites-1.png'];
 
 export const colors = {
   WHITE: '#F8F8F8',
@@ -37,6 +37,7 @@ const DEFAULT_TEXT_PARAMS = {
 
 export const SCREEN_HEIGHT = 512 * 1.5;
 export const SCREEN_WIDTH = 683 * 1.5;
+const SPRITE_SIZE = 16;
 
 export const ANIMATIONS = {
   /* Animations consist of tuples with the first corresponding to the spritesheet index
@@ -78,16 +79,19 @@ export const ANIMATIONS = {
   },
 };
 
-/** @type {HTMLCanvasElement | null} */
-
 class Draw {
   /** @type {HTMLCanvasElement | null} */
   constructor() {
-    this.ctx = this.canvas.getContext('2d');
     this.sprites = {};
+    this.images = {};
     this.height = 0;
     this.width = 0;
-    this.canvas = this.createCanvas('canv', this.width, this.height);
+    [this.canvas, this.ctx] = this.createCanvas(
+      'canv',
+      this.width,
+      this.height
+    );
+    this.fm = 1;
   }
 
   /** */
@@ -100,26 +104,9 @@ class Draw {
   }
 
   /** */
-  getCanvas(id) {
-    return (
-      document.getElementById(id) ||
-      this.createCanvas(id, SCREEN_WIDTH, SCREEN_HEIGHT)
-    );
-  }
-
-  /**
-   * @returns {CanvasRenderingContext2D}
-   */
-  getCtx(id) {
-    return this.getCanvas(id).getContext('2d');
-  }
-
-  /** */
   handleResize() {
-    // if (this.canvas) {
     this.canvas.height = SCREEN_HEIGHT;
     this.canvas.width = SCREEN_WIDTH;
-    // }
   }
 
   /**
@@ -127,24 +114,28 @@ class Draw {
    */
   async init() {
     this.handleResize();
-    const img = await this.loadImage('sprites', 'res/sprites.png');
-    const imgSize = img.width;
-    const spriteSize = 16;
-    this.loadSprites(img, spriteSize, spriteSize);
+    document.getElementById('canvasDiv')?.appendChild(this.canvas);
+    // const imgs = await this.loadImages();
+    const imgName = 'sprites';
+    const img = (this.images[imgName] = await this.loadImage(
+      imgName,
+      'res/sprites-1.png'
+    ));
+    this.loadSprites(img, SPRITE_SIZE, SPRITE_SIZE);
   }
 
   /**
    * @param {number} n
    */
   setOpacity(n) {
-    this.getCtx().globalAlpha = n;
+    this.ctx.globalAlpha = n;
   }
 
   /**
    * @param {CanvasRenderingContext2D} [ctx]
    */
   clear(ctx) {
-    ctx = ctx ?? this.getCtx();
+    ctx = ctx ?? this.ctx;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   }
 
@@ -166,10 +157,12 @@ class Draw {
    */
   drawSprite(sprite, x, y, rotation, scale) {
     scale = scale || 1;
+    rotation = rotation || 0;
     const [sprImg, sprX, sprY, sprW, sprH] = sprite;
-    this.ctx?.scale(scale);
-    this.ctx?.rotate((rotation * Math.PI) / 180);
     this.ctx?.save();
+    // this.ctx.translate(x, y);
+    // this.ctx?.rotate((rotation * Math.PI) / 180);
+    // this.ctx?.scale(scale, scale);
 
     this.ctx?.drawImage(sprImg, sprX, sprY, sprW, sprH, x, y, sprW, sprH);
     this.ctx?.restore();
@@ -210,7 +203,7 @@ class Draw {
   createInvertedSprite(sprite, inversion) {
     const [i, x, y, w, h] = sprite;
     const [canvas, ctx] = this.createCanvas('', w, h);
-    ctx.filter.invert(`${inversion.toString()}%`);
+    ctx.filter = `invert(${inversion.toString()}%)`;
     ctx.drawImage(i, x, y, w, h, 0, 0, w, h);
     return [canvas, 0, 0, w, h];
   }
@@ -248,7 +241,7 @@ class Draw {
   loadImages() {
     const imgPromises = [];
     for (const imgFile of IMAGE_FILES) {
-      imgPromises.push(this.loadImage(imgFile));
+      imgPromises.push(this.loadImage(imgFile, `res/${imgFile}`));
     }
     return Promise.all(imgPromises);
   }
@@ -272,8 +265,8 @@ class Draw {
    */
   loadSprites(img, spriteHeight, spriteWidth) {
     let n = 0;
-    for (let y = 0; y < spriteHeight; y++) {
-      for (let x = 0; x < spriteWidth; x++) {
+    for (let y = 0; y < img.height; y += spriteHeight) {
+      for (let x = 0; x < img.width; x += spriteWidth) {
         const newSprite = (this.sprites[`spr_${n}`] = this.createSprite(
           img,
           x,
@@ -327,6 +320,24 @@ class Draw {
    * @param {CanvasRenderingContext2D} [ctx]
    */
   drawText(text, x, y, textParams, ctx) {}
+
+  centerImageCoords(img) {
+    return [
+      Math.floor(this.canvas.width / 2) - Math.floor(img.width / 2),
+      Math.floor(this.canvas.height / 2) - Math.floor(img.height / 2),
+    ];
+  }
+
+  centerSpriteCoords(sprite) {
+    const [, , , width, height] = sprite;
+    return this.centerImageCoords({ width, height });
+  }
+
+  // scaleSprite(sprite, scale) {
+  //   const [img, sprX, sprY, sprW, sprH] = sprite;
+  //   const w = sprW * scale;
+  //   const h = sprH * scale;
+  // }
 }
 
 export const draw = new Draw();
