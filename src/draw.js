@@ -224,15 +224,6 @@ class Draw {
         (i + 1) * 25
       );
     });
-
-    // this.sprites[`spr_${n}_e`] = this.createInvertedSprite(newSprite, 100);
-    // this.sprites[`spr_${n}_e_f`] = this.createInvertedSprite(newSpriteF, 100);
-    // this.sprites[`spr_${n}_e_a`] = this.createInvertedSprite(newSprite, 75);
-    // this.sprites[`spr_${n}_e_f_a`] = this.createInvertedSprite(newSpriteF, 75);
-    // this.sprites[`spr_${n}_e_h`] = this.createInvertedSprite(newSprite, 50);
-    // this.sprites[`spr_${n}_e_f_h`] = this.createInvertedSprite(newSpriteF, 50);
-    // this.sprites[`spr_${n}_h`] = this.createInvertedSprite(newSprite, 25);
-    // this.sprites[`spr_${n}_f_h`] = this.createInvertedSprite(newSpriteF, 25);
   }
 
   /**
