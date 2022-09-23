@@ -135,8 +135,8 @@ class Draw {
    * @param {CanvasRenderingContext2D} [ctx]
    */
   clear(ctx) {
-    ctx = ctx ?? this.ctx;
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // ctx = ctx ?? this.ctx;
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
   }
 
   /**
@@ -272,36 +272,55 @@ class Draw {
   }
 
   /**
-   * @param {number} x
-   * @param {number} y
-   * @param {number} w
-   * @param {number} h
-   * @param {string} color
-   * @param {string} [stroke]
-   * @param {CanvasRenderingContext2D} [ctx]
+   * @param {number} x - the X position of the rectangle
+   * @param {number} y - the Y position of the rectangle
+   * @param {number} w - the width of the rectangle
+   * @param {number} h - the height of the rectangle
+   * @param {string} color - the color of the rectangle
+   * @param {boolean} [stroke] - if the rectangle should be outlined or filled
    */
-  drawRect(x, y, w, h, color, stroke, ctx) {}
+  drawRect(x, y, w, h, color, stroke) {
+    this.ctx.save();
+    this.ctx[stroke ? 'strokeStyle' : 'fillStyle'] = color;
+    this.ctx[stroke ? 'strokeRect' : 'fillRect'](x, y, w, h);
+    this.ctx.restore();
+  }
 
   /**
    * @param {number} x
    * @param {number} y
    * @param {number} r
    * @param {string} color
-   * @param {number} [pct]
-   * @param {CanvasRenderingContext2D} [ctx]
+   * @param {boolean} stroke
+   * @param {number} [percent]
    */
-  drawCircle(x, y, r, color, pct, ctx) {}
+  drawCircle(x, y, r, color, stroke, percent) {
+    this.ctx.save();
+    this.ctx[stroke ? 'strokeStyle' : 'fillStyle'] = color;
+    this.ctx.beginPath();
+    this.ctx.arc(x, y, r, 0, ((2 * percent) / 100 || 2) * Math.PI);
+    this.ctx[stroke ? 'stroke' : 'fill']();
+    this.ctx.restore();
+  }
 
   /**
-   * @param {number} x
-   * @param {number} y
-   * @param {number} x2
-   * @param {number} y2
-   * @param {string} color
-   * @param {number} [width]
-   * @param {CanvasRenderingContext2D} [ctx]
+   * @param {number} x - X coordinate for the line start.
+   * @param {number} y - Y coordinate for the line start.
+   * @param {number} x2 - X coordinate for the line end.
+   * @param {number} y2 - Y coordinate for the line end.
+   * @param {string} color - The color of the line.
+   * @param {number} [width] - The width of the line.
    */
-  drawLine(x, y, x2, y2, color, width, ctx) {}
+  drawLine(x, y, x2, y2, color, width) {
+    this.ctx.save();
+    this.ctx.beginPath();
+    this.ctx.moveTo(x, y);
+    this.ctx.strokeColor = color;
+    this.ctx.lineWidth = width;
+    this.ctx.lineTo(x2, y2);
+    this.ctx.stroke();
+    this.ctx.restore();
+  }
 
   /**
    * @param {string} text
@@ -310,7 +329,21 @@ class Draw {
    * @param {Partial<DrawTextParams>} [textParams]
    * @param {CanvasRenderingContext2D} [ctx]
    */
-  drawText(text, x, y, textParams, ctx) {}
+  drawText(text, x, y, textParams) {
+    const { font, size, color, align, strokeColor } = {
+      ...DEFAULT_TEXT_PARAMS,
+      ...(textParams ?? {}),
+    };
+    this.ctx.save();
+    this.ctx.strokeStyle = strokeColor;
+    this.ctx.fillStyle = color;
+    this.ctx.textAlign = align;
+    this.ctx.textBaseline = 'middle';
+    this.ctx.font = `${size}px ${font}`;
+    this.ctx.fillText(text, x, y);
+    this.ctx.strokeText(text, x, y);
+    this.ctx.restore();
+  }
 
   centerImageCoords(img) {
     return [
