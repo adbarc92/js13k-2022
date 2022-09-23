@@ -2,7 +2,7 @@
 // import { newGame } from './entities.js';
 // import { getSystems } from './systems.js';
 import { ecs } from './ecs.js';
-import { draw } from './draw.js';
+import { draw, testRotation } from './draw.js';
 
 console.debug('index.js loaded');
 const EXPECTED_FS = 10;
@@ -50,13 +50,14 @@ export const start = () => {
 
   // newGame(ecs);
   // loop();
+  testRotation(draw);
 };
 
 window.addEventListener('load', async () => {
-  // await draw.init();
+  await draw.init();
 
   window.addEventListener('resize', () => {
-    // draw.handleResize();
+    draw.handleResize();
   });
   window.draw = draw;
   console.debug('App loaded.');

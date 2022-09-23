@@ -163,8 +163,9 @@ class Draw {
     // this.ctx.translate(x, y);
     // this.ctx?.rotate((rotation * Math.PI) / 180);
     // this.ctx?.scale(scale, scale);
+    const [fixedSprite] = this.handleRotation(rotation, sprite);
 
-    this.ctx?.drawImage(sprImg, sprX, sprY, sprW, sprH, x, y, sprW, sprH);
+    this.ctx?.drawImage(fixedSprite, sprX, sprY, sprW, sprH, x, y, sprW, sprH);
     this.ctx?.restore();
   }
 
@@ -362,6 +363,28 @@ class Draw {
   //   const w = sprW * scale;
   //   const h = sprH * scale;
   // }
+
+  handleRotation(degrees, sprite) {
+    const [canvas, , , w, h] = sprite;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(w / 2, h / 2);
+    ctx.rotate((degrees * Math.PI) / 180);
+    return [canvas, ctx];
+  }
 }
+
+export const testRotation = async (draw) => {
+  const sprite = draw.getSprite('spr_16');
+
+  function timeout(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  for (let i = 0; i < 360; i += 5) {
+    draw.drawSprite(sprite, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, i, 1);
+    await timeout(500);
+    draw.clear();
+  }
+};
 
 export const draw = new Draw();
