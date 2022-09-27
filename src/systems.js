@@ -130,190 +130,62 @@ function Input(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemySpawner(ecs) {
-  const player = getPlayerEntity(ecs).get(Player);
-  this.iterate = () => {
-    if (!player.gameStarted) {
-      return;
-    }
-    /** @type {Swarm} */
-    const swarm = getSwarmEntity(ecs).get(Swarm);
-
-    if (swarm.waveTimer.isComplete()) {
-      for (let i = 0; i < swarm.waveNumber + 5; i += 2) {
-        let { x } = player.PhysicsBody;
-        x = i % 2 === 0 ? x - 10 : x + 10;
-        createEnemyWarrior(x, 20);
-      }
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DistributeDeathShards(ecs) {
-  const selector = ecs.select(Swarm, Shardable);
-
-  this.iterate = (entity) => {
-    if (entity.Shardable.timeToNextShard.isComplete()) {
-      entity.Shardable.shardCount += 1;
-      entity.Shardable.hasShards = true;
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Stunning(ecs) {
-  const selector = ecs.select(Stunnable);
-
-  this.iterate = (entity) => {
-    if (entity.Stunnable.isStunned && entity.Stunnable.cooldown.isComplete()) {
-      entity.Stunnable.isStunned = false;
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function EnemyAI(ecs) {}
+function EnemyAI(ecs) {
+  this.update = () => {};
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DashHandler(ecs) {
-  const selector = ecs.select(Dashing);
-
-  this.iterate = (entity) => {
-    let { intendsToAct, canAct, isActing, cooldown, duration } = entity.Dashing;
-    if (!isActing && cooldown.isComplete()) {
-      canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - dashing
-      isActing = true;
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      canAct = false;
-      cooldown.start();
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DeflectionHandler(ecs) {
-  const selector = ecs.select(Deflecting);
-
-  this.iterate = (entity) => {
-    let { intendsToAct, canAct, isActing, cooldown, duration } =
-      entity.Deflection;
-    if (!isActing && cooldown.isComplete()) {
-      canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - deflecting
-      isActing = true;
-      // Collision detection
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      canAct = false;
-      cooldown.start();
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function BashHandler(ecs) {
-  const selector = ecs.select(Bashing);
-
-  this.iterate = (entity) => {
-    const { intendsToAct, canAct, isActing, cooldown, duration } =
-      entity.Bashing;
-    if (!isActing && cooldown.isComplete()) {
-      entity.Bashing.canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - deflecting
-      entity.Bashing.isActing = true;
-      // Collision detection
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      entity.Bashing.canAct = false;
-      cooldown.start();
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function StrikeHandler(ecs) {
-  const selector = ecs.select(Striking);
-
-  this.iterate = (entity) => {
-    const { intendsToAct, canAct, isActing, cooldown, duration } =
-      entity.Striking;
-    if (!isActing && cooldown.isComplete()) {
-      entity.Striking.canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - striking
-      entity.Striking.isActing = true;
-      // Collision detection
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      entity.Striking.canAct = false;
-      cooldown.start();
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function JumpHandler(ecs) {
-  const selector = ecs.select(Jumping);
-
-  this.iterate = (entity) => {
-    const { intendsToAct, actionCap, actionUses, cooldown, duration } =
-      entity.Jumping;
-    if (entity.PhysicsBody.y < 1) {
-      entity.actionCap = 0;
-    }
-    if (actionUses < actionCap && intendsToAct) {
-      entity.actionUses += 1;
-      duration.start();
-    }
-    if (actionUses && duration.isComplete()) {
-      entity.actionCap = false;
-      cooldown.start();
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Movement(ecs) {
-  const selector = ecs.select(PhysicsBody);
-
-  this.iterate = (entity) => {
-    const physics = entity.get(PhysicsBody);
-
-    const frameRatio = draw.fm;
-    physics.x += physics.vx * frameRatio;
-    physics.y += physics.vy * frameRatio;
-
-    // check ground collision
-    physics.ay = 0.0;
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function AttackingHighlightFlipper(ecs) {}
+function AttackingHighlightFlipper(ecs) {
+  this.update = () => {};
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function HitHighlightFlipper(ecs) {
-  const selector = ecs.select(Renderable, HitHighlightFlipper);
-
-  this.iterate = (entity) => {
-    const renderable = entity.get(Renderable);
-    const h = entity.get(HitHighlightRender);
-
-    renderable.highlighted = !h.sprTimer.isComplete();
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
@@ -354,119 +226,7 @@ function CameraMover(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderActors(ecs) {
-  let renderList = [];
-
-  /**
-   * @param {{entity, z}[]} arr
-   * @param {{entity, z}} val
-   */
-  function addAndSort(arr, val) {
-    arr.push(val);
-    for (let i = arr.length - 1; i > 0 && arr[i].z < arr[i - 1].z; i--) {
-      const tmp = arr[i];
-      arr[i] = arr[i - 1];
-      arr[i - 1] = tmp;
-    }
-  }
-
-  /** @param {Entity} entity */
-  const drawEntity = (entity) => {
-    /** @type {PhysicsBody} */
-    const { x, y } = entity.get(PhysicsBody);
-    /** @type {Striking} */
-    const { isActing: isStriking } = entity.get(Striking);
-    /** @type {Renderable} */
-    const renderable = entity.get(Renderable);
-    console.log(`renderable: ${JSON.stringify(renderable)}`);
-    const {
-      spriteName,
-      spriteSetName,
-      timeToNextSprite,
-      animation,
-      currentSpriteIdx,
-      opacity,
-      scale,
-      flipped,
-      highlighted,
-    } = renderable;
-
-    const animationSprites =
-      ANIMATIONS[`${spriteSetName}_ANIMATIONS`][animation][0];
-
-    if (timeToNextSprite.isComplete()) {
-      renderable.currentSpriteIdx++;
-      if (renderable.currentSpriteIdx > animationSprites.length) {
-        renderable.spriteName = 'STANDING';
-        renderable.currentSpriteIdx = 0;
-      } else {
-        renderable.timeToNextSprite.start(
-          ANIMATIONS[`${spriteSetName}_ANIMATIONS`][animation][1][
-            currentSpriteIdx
-          ]
-        );
-      }
-    }
-
-    let spritePostFix = '';
-    if (flipped) {
-      spritePostFix += '_f';
-    }
-    if (highlighted) {
-      spritePostFix += '_h';
-    }
-    if (isStriking) {
-      spritePostFix += '_a';
-    }
-
-    draw.setOpacity(opacity);
-    if (spriteName) {
-      const idx = animationSprites[renderable.currentSpriteIdx];
-      const spriteId = spriteName + idx + spritePostFix;
-      console.log(`spriteId: ${spriteId}`);
-      draw.drawSprite(spriteName + idx + spritePostFix, x, y, 0, scale);
-    }
-    draw.setOpacity(1);
-  };
-
-  /** @param {Entity} entity */
-  const addToRenderList = (entity) => {
-    /** @type {Renderable} */
-    const renderable = entity.get(Renderable);
-    addAndSort(renderList, {
-      entity,
-      z: renderable.z,
-    });
-  };
-
-  const isOffscreen = (x, y, x2, y2, w, h) => {
-    distance(x + w / 2, y + h / 2, x2, y2) < draw.SCREEN_WIDTH / 2 + 160;
-  };
-
-  /** @param {Entity} entity */
-  const drawRelativeToCamera = (entity) => {
-    /** @type {Camera} */
-    const { x, y, w, h } = entity.get(Camera);
-    const ctx = draw.getCtx();
-    ctx.save();
-    ctx.translate(-x, -y);
-    for (const { entity } of renderList) {
-      const { x: x2, y: y2 } = entity.get(PhysicsBody);
-      if (!isOffscreen(x, y, x2, y2, w, h)) {
-        drawEntity(entity);
-      } else {
-        console.log('it is offscreen');
-      }
-    }
-  };
-
-  this.update = () => {
-    const sprites = ecs.select(PhysicsBody, Renderable);
-    console.log(`sprites: ${JSON.stringify(sprites)}`);
-    const camera = ecs.select(Camera);
-    console.log(`camera: ${camera}`);
-    sprites.iterate(addToRenderList);
-    camera.iterate(drawRelativeToCamera);
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
@@ -475,33 +235,27 @@ function RenderUI(ecs) {
 }
 
 function RenderWorld(ecs) {
-  this.update = () => {
-    console.log('Rendering world...');
-    const ctx = draw.getCtx();
-    const world = getWorldEntity(ecs).get(World);
-    for (let i = 0; i < world.height; i++) {
-      for (let j = 0; j < world.width; j++) {
-        const tile = world.tiles[i * world.width + j];
-        let color = tile === 1 ? colors.BLACK : colors.WHITE;
-        const t = TILE_SIZE * TILE_SCALE;
-        const x = j * TILE_SIZE;
-        const y = i * TILE_SIZE;
-        draw.drawRect(x, y, t, t, color, false, ctx);
-      }
-    }
-  };
+  this.update = () => {};
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function LimitedLifetimeUpdater(ecs) {}
+function LimitedLifetimeUpdater(ecs) {
+  this.update = () => {};
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function HitPointUpdater(ecs) {}
+function HitPointUpdater(ecs) {
+  this.update = () => {};
+}
 
-function CheckTileCollisions(ecs) {}
+function CheckTileCollisions(ecs) {
+  this.update = () => {};
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function CheckCollisions(ecs) {}
+function CheckCollisions(ecs) {
+  this.update = () => {};
+}
 
 export const getSystems = (ecs) => {
   return [
