@@ -59,18 +59,25 @@ function Input(ecs) {
   const handleKeyUpdate = (player, physics, hp) => {
     const playerEntity = getPlayerEntity(ecs);
 
-    if (playerEntity.components.Stunnable?.isStunned || hp) {
+    /* If the player is stunned, accept no inputs (except pause) */
+    if (playerEntity.get(Stunnable)?.isStunned || hp) {
       return;
     }
 
     if (player.keys.ArrowLeft || player.keys.a) {
+      // physics.facingLeft = true;
+      // physics.vx = WALKING_SPEED;
+      const physics = playerEntity.get(PhysicsBody);
       physics.facingLeft = true;
-      physics.vx = WALKING_SPEED;
+      playerEntity.get(Movement).intendsToMove = true;
     }
 
     if (player.keys.ArrowRight || player.keys.d) {
+      // physics.facingLeft = false;
+      // physics.vx = -WALKING_SPEED;
+      const physics = playerEntity.get(PhysicsBody);
       physics.facingLeft = false;
-      physics.vx = -WALKING_SPEED;
+      playerEntity.get(Movement).intendsToMove = true;
     }
 
     if (player.keys.ArrowUp || player.keys.w) {
@@ -161,6 +168,7 @@ function EnemyAI(ecs) {
     // For those within attacking distance, choose an attack
     // Try to strike - 75%
     // Try to deflect - 25%
+    // Fleeing?
   };
 }
 
@@ -168,7 +176,7 @@ function EnemyAI(ecs) {
 function DashHandler(ecs) {
   this.update = () => {
     // Select all units which can dash
-    // If they intend to dash, change the animation and add X velocity and opposing X acceleration
+    // If they intend to dash, change the animation state and add X velocity and opposing X acceleration
   };
 }
 
@@ -176,38 +184,58 @@ function DashHandler(ecs) {
 function DeflectionHandler(ecs) {
   this.update = () => {
     // Select all units which can deflect
-    // If they intend to deflect, change animation and set deflecting
+    // If they intend to deflect, change animation state and set deflecting
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function BashHandler(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can bash
+    // If they intend to bash, set animState and set bashing
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function StrikeHandler(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can strike
+    // If they intend to strike, set animState and set striking
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function JumpHandler(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can strike
+    // If they intend to strike, set animState and set striking
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Movement(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities with physicsBody
+    // If an entity is not moving and intends to move, set animState and velocity
+    // If the entity is moving and does not intend to move, reset animState and velocity
+    // If the entity is moving and intends to move, do nothing
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function AttackingHighlightFlipper(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can be highlighted and attack
+    // If the entity is attacking, flip their color scheme to the corresponding inversion
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function HitHighlightFlipper(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can be highlighted and hit
+    // If the entity is hit, flip their color scheme to the corresponding inversion
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
@@ -248,35 +276,58 @@ function CameraMover(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderActors(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all renderables
+    // Draw all renderables according to their animation state and position
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderUI(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Get the UI
+    // Render it
+  };
 }
 
 function RenderWorld(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Get the world
+    // Render it
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function LimitedLifetimeUpdater(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities with limitedLifetime
+    // If the lifetime has expired, delete it.
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function HitPointUpdater(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities with HP
+    // If the entity has taken damage, subtract that from their HP
+  };
 }
 
 function CheckTileCollisions(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all tiles with collisions
+    // Select all entities with physics
+    // If the physicsEntities overlap with any of the tiles, set their positions to be outside of the tiles
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function CheckCollisions(ecs) {
-  this.update = () => {};
+function CheckDamageCollisions(ecs) {
+  this.update = () => {
+    // Select all entities that can deal damage.
+    // Select all entities with physicsBodies.
+    // If there is any overlap between either group, deal damage to the physicsBody entities.
+  };
 }
 
 export const getSystems = (ecs) => {
@@ -298,7 +349,7 @@ export const getSystems = (ecs) => {
     new RenderActors(ecs),
     // new RenderUI(ecs),
     new RenderWorld(ecs),
-    // new CheckCollisions(ecs),
+    // new CheckDamageCollisions(ecs),
     // new LimitedLifetimeUpdater(ecs),
     // new HitPointUpdater(ecs),
   ];
