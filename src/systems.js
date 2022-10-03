@@ -130,32 +130,54 @@ function Input(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemySpawner(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Get the Enemy Group Id
+    // Based on the wave
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DistributeDeathShards(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can receive death shards
+    // If the timer is up, increment their shard count by one.
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Stunning(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all entities that can be stunned.
+    // If the timer is up, reset their stun status
+    // If they are to be stunned, set their status and set a timer
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemyAI(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all with AI
+    // For those that are outside of attacking distance, move toward the player
+    // For those within attacking distance, choose an attack
+    // Try to strike - 75%
+    // Try to deflect - 25%
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DashHandler(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all units which can dash
+    // If they intend to dash, change the animation and add X velocity and opposing X acceleration
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DeflectionHandler(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    // Select all units which can deflect
+    // If they intend to deflect, change animation and set deflecting
+  };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
