@@ -35,6 +35,8 @@ import { colors, draw, ANIMATIONS } from './draw.js';
 import { distance } from './utils.js';
 
 const WALKING_SPEED = 2;
+const SHARD_DURATION = 2000;
+const STUN_DURATION = 2500;
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Input(ecs) {
@@ -138,31 +140,51 @@ function Input(ecs) {
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemySpawner(ecs) {
   this.update = () => {
-    // Get the Enemy Group Id
-    // Based on the wave
+    const swarm = getSwarmEntity(ecs).get(Swarm);
+    // If the wave timer is complete, add new enemies based on the swarm.
+    if (swarm.waveTimer.isComplete()) {
+      for (let i = 0; i < swarm.waveCount + 5; i++) {
+        swarm.enemies.push(createEnemyWarrior());
+      }
+    }
+    // Based on the wave, add new entities to the swarm.
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DistributeDeathShards(ecs) {
   this.update = () => {
-    // Select all entities that can receive death shards
-    // If the timer is up, increment their shard count by one.
+    ecs.select(Shardable).iterate((entity) => {
+      const shardable = entity.get(Shardable);
+      if (shardable.shardTimer.isComplete()) {
+        shardable.count += 1;
+        shardable.shardTimer.start(SHARD_DURATION);
+      }
+    });
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Stunning(ecs) {
   this.update = () => {
-    // Select all entities that can be stunned.
-    // If the timer is up, reset their stun status
-    // If they are to be stunned, set their status and set a timer
+    ecs.select(Stunnable).iterate((entity) => {
+      const stunnable = entity.get(Stunnable);
+      if (!stunnable.isStunned && stunnable.shouldBeStunned) {
+        stunnable.isStunned = true;
+        stunnable.stunTimer.start(STUN_DURATION);
+      }
+      if (stunnable.isStunned && stunnable.stunTimer.isComplete()) {
+        stunnable.isStunned = false;
+      }
+    });
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemyAI(ecs) {
   this.update = () => {
+    const playerFighter = getPlayerFighter();
+    ecs.select(AI).iterate((entity) => {});
     // Select all with AI
     // For those that are outside of attacking distance, move toward the player
     // For those within attacking distance, choose an attack
