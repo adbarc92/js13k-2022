@@ -12,11 +12,14 @@ import {
   Player,
   Ai,
   Camera,
+  Collision,
+  Damage,
   Projectile,
   HitPoints,
   HitBody,
   Warrior,
   Swarm,
+  Tile,
   Ui,
   World,
   HitHighlightRender,
@@ -25,6 +28,9 @@ import {
   TILE_SCALE,
   WORLD_HEIGHT,
   TILE_SIZE,
+  getUi,
+  getPlayerFighter,
+  getWorld,
 } from './components.js';
 import {
   createEnemyWarrior,
@@ -318,7 +324,7 @@ function RenderActors(ecs) {
 function RenderUI(ecs) {
   this.update = () => {
     const ui = getUi();
-    renderUi(ui);
+    // renderUi(ui);
     // Get the UI
     // Render it
   };
@@ -327,7 +333,7 @@ function RenderUI(ecs) {
 function RenderWorld(ecs) {
   this.update = () => {
     const world = getWorld();
-    renderWorld(world);
+    // renderWorld(world);
     // Get the world
     // Render it
   };
@@ -345,7 +351,7 @@ function LimitedLifetimeUpdater(ecs) {
 /** @param {import('./ecs.js').ECS} ecs */
 function HitPointUpdater(ecs) {
   this.update = () => {
-    ecs.select(HP).iterate(() => {});
+    ecs.select(HitPoints).iterate(() => {});
     // Select all entities with HP
     // If the entity has taken damage, subtract that from their HP
   };
