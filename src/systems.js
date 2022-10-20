@@ -39,7 +39,7 @@ import {
   getSwarmEntity,
 } from './entities.js';
 import { colors, draw, ANIMATIONS } from './draw.js';
-import { distance } from './utils.js';
+import { getDistance } from './utils.js';
 
 const WALKING_SPEED = 2;
 const SHARD_DURATION = 2000;
@@ -69,21 +69,20 @@ function Input(ecs) {
     const playerEntity = getPlayerEntity(ecs);
 
     /* If the player is stunned, accept no inputs (except pause) */
-    if (playerEntity.get(Stunnable)?.isStunned || hp) {
+    if (
+      playerEntity.get(Stunnable)?.isStunned ||
+      !playerEntity.get(HitPoints).current
+    ) {
       return;
     }
 
     if (player.keys.ArrowLeft || player.keys.a) {
-      // physics.facingLeft = true;
-      // physics.vx = WALKING_SPEED;
       const physics = playerEntity.get(PhysicsBody);
       physics.facingLeft = true;
       playerEntity.get(Movement).intendsToMove = true;
     }
 
     if (player.keys.ArrowRight || player.keys.d) {
-      // physics.facingLeft = false;
-      // physics.vx = -WALKING_SPEED;
       const physics = playerEntity.get(PhysicsBody);
       physics.facingLeft = false;
       playerEntity.get(Movement).intendsToMove = true;
@@ -148,13 +147,11 @@ function Input(ecs) {
 function EnemySpawner(ecs) {
   this.update = () => {
     const swarm = getSwarmEntity(ecs).get(Swarm);
-    // If the wave timer is complete, add new enemies based on the swarm.
     if (swarm.waveTimer.isComplete()) {
       for (let i = 0; i < swarm.waveCount + 5; i++) {
         swarm.enemies.push(createEnemyWarrior());
       }
     }
-    // Based on the wave, add new entities to the swarm.
   };
 }
 
@@ -191,7 +188,11 @@ function Stunning(ecs) {
 function EnemyAI(ecs) {
   this.update = () => {
     const playerFighter = getPlayerFighter();
-    ecs.select(Ai).iterate((entity) => {});
+    const { x: pX, y: pY } = playerFighter.get(PhysicsBody);
+    ecs.select(Ai).iterate((entity) => {
+      const { x: eX, y: eY } = entity.get(PhysicsBody);
+      const distance = getDistance(pX, pY, eX, eY);
+    });
     // Select all with AI
     // For those that are outside of attacking distance, move toward the player
     // For those within attacking distance, choose an attack
@@ -342,7 +343,11 @@ function RenderWorld(ecs) {
 /** @param {import('./ecs.js').ECS} ecs */
 function LimitedLifetimeUpdater(ecs) {
   this.update = () => {
-    ecs.select(LimitedLifetime).iterate(() => {});
+    ecs.select(LimitedLifetime).iterate((entity) => {
+      if (entity.get(LimitedLifetime).timer.isComplete()) {
+        entity.eject();
+      }
+    });
     // Select all entities with limitedLifetime
     // If the lifetime has expired, delete it.
   };
@@ -351,15 +356,18 @@ function LimitedLifetimeUpdater(ecs) {
 /** @param {import('./ecs.js').ECS} ecs */
 function HitPointUpdater(ecs) {
   this.update = () => {
-    ecs.select(HitPoints).iterate(() => {});
-    // Select all entities with HP
-    // If the entity has taken damage, subtract that from their HP
+    ecs.select(HitPoints).iterate((entity) => {
+      const { damage, current } = entity.get(HitPoints);
+      entity.get(HitPoints).current -= damage;
+      if (current <= 0) {
+        entity.get(HitPoints).shouldDie = true;
+      }
+    });
   };
 }
 
 function CheckTileCollisions(ecs) {
   this.update = () => {
-    ecs.select(Tile, Collision).iterate(() => {});
     // Select all tiles with collisions
     // Select all entities with physics
     // If the physicsEntities overlap with any of the tiles, set their positions to be outside of the tiles
@@ -379,24 +387,24 @@ function CheckDamageCollisions(ecs) {
 export const getSystems = (ecs) => {
   return [
     new Input(ecs),
-    // new EnemySpawner(ecs),
-    // new DistributeDeathShards(ecs),
-    // new Stunning(ecs),
-    // new EnemyAI(ecs),
-    // new DashHandler(ecs),
-    // new DeflectionHandler(ecs),
-    // new BashHandler(ecs),
-    // new StrikeHandler(ecs),
-    // new JumpHandler(ecs),
-    // new Movement(ecs),
-    // new AttackingHighlightFlipper(ecs),
-    // new HitHighlightFlipper(ecs),
-    // new CameraMover(ecs),
+    new EnemySpawner(ecs),
+    new DistributeDeathShards(ecs),
+    new Stunning(ecs),
+    new EnemyAI(ecs),
+    new DashHandler(ecs),
+    new DeflectionHandler(ecs),
+    new BashHandler(ecs),
+    new StrikeHandler(ecs),
+    new JumpHandler(ecs),
+    new Movement(ecs),
+    new AttackingHighlightFlipper(ecs),
+    new HitHighlightFlipper(ecs),
+    new CameraMover(ecs),
     new RenderActors(ecs),
-    // new RenderUI(ecs),
+    new RenderUI(ecs),
     new RenderWorld(ecs),
-    // new CheckDamageCollisions(ecs),
-    // new LimitedLifetimeUpdater(ecs),
-    // new HitPointUpdater(ecs),
+    new CheckDamageCollisions(ecs),
+    new LimitedLifetimeUpdater(ecs),
+    new HitPointUpdater(ecs),
   ];
 };
