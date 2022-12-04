@@ -191,11 +191,14 @@ function EnemyAI(ecs) {
     const { x: pX, y: pY } = playerFighter.get(PhysicsBody);
     ecs.select(Ai).iterate((entity) => {
       const { x: eX, y: eY } = entity.get(PhysicsBody);
+      const enemyWarrior = entity.get(Warrior); // TODO: Account for ranged units
       const distance = getDistance(pX, pY, eX, eY);
+      if (distance > enemyWarrior.threatRange) {
+        enemyWarrior.get(Movement).intendsToMove = true; // TODO: Fix this
+      } else {
+        enemyWarrior.get(Striking).intendsToAttack = true;
+      }
     });
-    // Select all with AI
-    // For those that are outside of attacking distance, move toward the player
-    // For those within attacking distance, choose an attack
     // Try to strike - 75%
     // Try to deflect - 25%
     // Fleeing?
@@ -205,7 +208,11 @@ function EnemyAI(ecs) {
 /** @param {import('./ecs.js').ECS} ecs */
 function DashHandler(ecs) {
   this.update = () => {
-    ecs.select(Dashing).iterate((entity) => {});
+    ecs.select(Dashing).iterate((entity) => {
+      if (entity.get(Dashing).intendsToDash) {
+        // Dash
+      }
+    });
     // Select all units which can dash
     // If they intend to dash, change the animation state and add X velocity and opposing X acceleration
   };

@@ -6,6 +6,7 @@ import { draw } from './draw.js';
 
 console.debug('index.js loaded');
 const EXPECTED_FS = 10;
+const LOOP_INTERVAL = 16;
 
 const integrate = (frameTime) => {
   draw.clear();
@@ -40,7 +41,8 @@ const loop = () => {
     // requestAnimationFrame(_loop);
     // setTimeout(_loop, 16);
   };
-  setInterval(_loop, 16);
+
+  setInterval(_loop, LOOP_INTERVAL);
 };
 
 export const start = () => {
