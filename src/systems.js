@@ -373,16 +373,22 @@ function HitPointUpdater(ecs) {
   };
 }
 
-function CheckTileCollisions(ecs) {
+function EnforceTileCollisions(ecs) {
   this.update = () => {
+    const collidables = ecs.select(Collision);
+    const physicsBodies = ecs.select(PhysicsBody);
+    physicsBodies.forEach((pBody) => {
+      collidables.forEach((cBody) => {});
+    });
     // Select all tiles with collisions
     // Select all entities with physics
     // If the physicsEntities overlap with any of the tiles, set their positions to be outside of the tiles
   };
 }
 
-/** @param {import('./ecs.js').ECS} ecs */
-function CheckDamageCollisions(ecs) {
+/** @param {import('./ecs.js').E
+ * new EnforceTileCollisions(ecs),CS} ecs */
+function EnforceDamageCollisions(ecs) {
   this.update = () => {
     ecs.select(Damage, Collision).iterate(() => {});
     // Select all entities that can deal damage.
@@ -391,12 +397,19 @@ function CheckDamageCollisions(ecs) {
   };
 }
 
+function ApplyDamage(ecs) {
+  // Select everything that can take damage;
+  // If it is to take damage, then deduct whatever damage is to be taken from its HP.
+  // If its HP is zero, remove it from the game.
+  // If it is the player then the game is over.
+}
+
 export const getSystems = (ecs) => {
   return [
+    new Stunning(ecs),
     new Input(ecs),
     new EnemySpawner(ecs),
     new DistributeDeathShards(ecs),
-    new Stunning(ecs),
     new EnemyAI(ecs),
     new DashHandler(ecs),
     new DeflectionHandler(ecs),
@@ -410,7 +423,8 @@ export const getSystems = (ecs) => {
     new RenderActors(ecs),
     new RenderUI(ecs),
     new RenderWorld(ecs),
-    new CheckDamageCollisions(ecs),
+    new EnforceTileCollisions(ecs),
+    new EnforceDamageCollisions(ecs),
     new LimitedLifetimeUpdater(ecs),
     new HitPointUpdater(ecs),
   ];
