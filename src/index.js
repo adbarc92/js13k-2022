@@ -1,6 +1,6 @@
-// import { getComponents } from './components.js';
-// import { newGame } from './entities.js';
-// import { getSystems } from './systems.js';
+import { getComponents } from './components.js';
+import { newGame } from './entities.js';
+import { getSystems } from './systems.js';
 import { ecs } from './ecs.js';
 import { draw } from './draw.js';
 
@@ -47,8 +47,8 @@ const loop = () => {
 
 export const start = () => {
   console.debug('App start!');
-  // ecs.register(...getComponents(ecs));
-  // ecs.process(...getSystems(ecs));
+  ecs.register(...getComponents(ecs));
+  ecs.process(...getSystems(ecs));
 
   // newGame(ecs);
   // loop();

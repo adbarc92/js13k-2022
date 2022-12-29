@@ -13,10 +13,9 @@ import {
   Ai,
   Camera,
   Collision,
-  Damage,
-  Projectile,
   HitPoints,
-  HitBody,
+  Hitbox,
+  Hurtbox,
   Warrior,
   Swarm,
   Tile,
@@ -39,7 +38,7 @@ import {
   getSwarmEntity,
 } from './entities.js';
 import { colors, draw, ANIMATIONS } from './draw.js';
-import { getDistance } from './utils.js';
+import { getDistance, boxesOverlap } from './utils.js';
 
 const WALKING_SPEED = 2;
 const SHARD_DURATION = 2000;
@@ -121,6 +120,7 @@ function Input(ecs) {
       player.keys[key] = true;
     });
 
+    // TODO: figure out why keysUp are cleared here
     keysUp.forEach((key) => {
       player.keys[key] = false;
     });
@@ -129,6 +129,7 @@ function Input(ecs) {
       handleKeyUpdate(player, physics, hp);
     }
 
+    // TODO: Add keystroke logger
     console.log(`keysDown: ${keysDown}`);
 
     if (keysUp.length) {
@@ -373,12 +374,39 @@ function HitPointUpdater(ecs) {
   };
 }
 
+/** @param {import('./ecs.js').E
+ * new EnforceTileCollisions(ecs),CS} ecs */
+function EnforceHitboxes(ecs) {
+  this.update = () => {
+    ecs.select(Hitbox).iterate((hitEntity) => {
+      ecs.select(Hurtbox).iterate((hurtEntity) => {
+        const hitBoxes = hitEntity.get(Hitbox);
+        const hurtBoxes = hurtEntity.get(Hurtbox);
+        hitBoxes.forEach((hitBox) => {
+          const { xStart: x1, xEnd: x2, yStart: y1, yEnd: y2 } = hitBox;
+          const { xStart: x3, xEnd: x4, yStart: y3, yEnd: y4 } = hurtob;
+          if (boxesOverlap(x1, y1, x2, y2, x3, y3, x4, y4)) {
+            // TODO: account for attack knockback
+            // An entity can have HP without a hurtbox (e.g. perfect guard) but not the inverse
+            const damage = hitEntity.get(Damage);
+            let hp = hurtEntity.get(Hp);
+            hp = hp - damage;
+            // If hp is zero, flag for removal
+            // If player hp is zero, game is over
+          }
+        });
+      });
+    });
+    // Select all entities that can deal damage.
+    // Select all entities with physicsBodies.
+    // If there is any overlap between either group, deal damage to the physicsBody entities.
+  };
+}
+
 function EnforceTileCollisions(ecs) {
   this.update = () => {
-    const collidables = ecs.select(Collision);
-    const physicsBodies = ecs.select(PhysicsBody);
-    physicsBodies.forEach((pBody) => {
-      collidables.forEach((cBody) => {});
+    ecs.select(Collision).iterate((collisionEntity) => {
+      ecs.select(PhysicsBody).iterate((physicsEntity) => {});
     });
     // Select all tiles with collisions
     // Select all entities with physics
@@ -386,46 +414,28 @@ function EnforceTileCollisions(ecs) {
   };
 }
 
-/** @param {import('./ecs.js').E
- * new EnforceTileCollisions(ecs),CS} ecs */
-function EnforceDamageCollisions(ecs) {
-  this.update = () => {
-    ecs.select(Damage, Collision).iterate(() => {});
-    // Select all entities that can deal damage.
-    // Select all entities with physicsBodies.
-    // If there is any overlap between either group, deal damage to the physicsBody entities.
-  };
-}
-
-function ApplyDamage(ecs) {
-  // Select everything that can take damage;
-  // If it is to take damage, then deduct whatever damage is to be taken from its HP.
-  // If its HP is zero, remove it from the game.
-  // If it is the player then the game is over.
-}
-
 export const getSystems = (ecs) => {
   return [
-    new Stunning(ecs),
+    // new Stunning(ecs),
     new Input(ecs),
-    new EnemySpawner(ecs),
-    new DistributeDeathShards(ecs),
-    new EnemyAI(ecs),
-    new DashHandler(ecs),
-    new DeflectionHandler(ecs),
-    new BashHandler(ecs),
-    new StrikeHandler(ecs),
-    new JumpHandler(ecs),
-    new Movement(ecs),
-    new AttackingHighlightFlipper(ecs),
-    new HitHighlightFlipper(ecs),
-    new CameraMover(ecs),
-    new RenderActors(ecs),
-    new RenderUI(ecs),
-    new RenderWorld(ecs),
-    new EnforceTileCollisions(ecs),
-    new EnforceDamageCollisions(ecs),
-    new LimitedLifetimeUpdater(ecs),
-    new HitPointUpdater(ecs),
+    // new EnemySpawner(ecs),
+    // new DistributeDeathShards(ecs),
+    // new EnemyAI(ecs),
+    // new DashHandler(ecs),
+    // new DeflectionHandler(ecs),
+    // new BashHandler(ecs),
+    // new StrikeHandler(ecs),
+    // new JumpHandler(ecs),
+    // new Movement(ecs),
+    // new AttackingHighlightFlipper(ecs),
+    // new HitHighlightFlipper(ecs),
+    // new CameraMover(ecs),
+    // new RenderActors(ecs),
+    // new RenderUI(ecs),
+    // new RenderWorld(ecs),
+    // new EnforceTileCollisions(ecs),
+    // new EnforceDamageCollisions(ecs),
+    // new LimitedLifetimeUpdater(ecs),
+    // new HitPointUpdater(ecs),
   ];
 };
