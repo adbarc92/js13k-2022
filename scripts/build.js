@@ -1,15 +1,30 @@
 // @ts-nocheck
 
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const fs = require('fs');
 const minifyHtml = require('html-minifier').minify;
 const Terser = require('terser');
 const path = require('path');
+const advzip = require('advzip-bin');
 
 const execAsync = async (command) => {
   return new Promise((resolve, reject) => {
     console.log(command);
     exec(command, (err, stdout, stderr) => {
+      if (err) {
+        reject(err, stderr);
+        return;
+      }
+      resolve(stdout);
+    });
+  });
+};
+
+// Todo: replace with util.promisify
+const execFileAsync = async (fileName) => {
+  return new Promise((resolve, reject) => {
+    console.log(`execFile: ${fileName}`);
+    execFile(fileName, (err, stdout, stderr) => {
       if (err) {
         reject(err, stderr);
         return;
@@ -105,9 +120,6 @@ const build = async () => {
 
   fs.writeFileSync(srcDistDir + '/index.js', indexFile);
 
-  // console.log('RETURN EARLY');
-  // return;
-
   try {
     await minifyFiles([srcDistDir + '/index.js'], terserOptions);
   } catch (e) {
@@ -162,7 +174,7 @@ const build = async () => {
   //   `mkdir -p dist && cp .build/index.html dist && cp .build/main.js dist && cp .build/packed.png dist`
   // );
 
-  const zipFilePath = path.resolve(`${__dirname}/../hotg.zip`);
+  const zipFilePath = path.resolve(`${__dirname}/../perennial.zip`);
 
   console.log('\nZip (command line)...');
   try {
@@ -174,7 +186,11 @@ const build = async () => {
     console.log('failed zip', e);
   }
   try {
-    await execAsync(`advzip -z -4 ${zipFilePath}`);
+    await execFileAsync(advzip, [
+      '--recompress',
+      '--shrink-insane',
+      zipFilePath,
+    ]);
     console.log(await execAsync(`stat -c '%n %s' ${zipFilePath}`));
   } catch (e) {
     console.log('failed adv zip', e);

@@ -1,11 +1,12 @@
-// import { getComponents } from './components.js';
-// import { newGame } from './entities.js';
-// import { getSystems } from './systems.js';
+import { getComponents } from './components.js';
+import { newGame } from './entities.js';
+import { getSystems } from './systems.js';
 import { ecs } from './ecs.js';
 import { draw } from './draw.js';
 
 console.debug('index.js loaded');
 const EXPECTED_FS = 10;
+const LOOP_INTERVAL = 16;
 
 const integrate = (frameTime) => {
   draw.clear();
@@ -40,13 +41,14 @@ const loop = () => {
     // requestAnimationFrame(_loop);
     // setTimeout(_loop, 16);
   };
-  setInterval(_loop, 16);
+
+  setInterval(_loop, LOOP_INTERVAL);
 };
 
 export const start = () => {
   console.debug('App start!');
-  // ecs.register(...getComponents(ecs));
-  // ecs.process(...getSystems(ecs));
+  ecs.register(...getComponents(ecs));
+  ecs.process(...getSystems(ecs));
 
   // newGame(ecs);
   // loop();

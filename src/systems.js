@@ -12,18 +12,24 @@ import {
   Player,
   Ai,
   Camera,
-  Projectile,
+  Collision,
   HitPoints,
-  HitBody,
+  Hitbox,
+  Hurtbox,
   Warrior,
   Swarm,
+  Tile,
   Ui,
   World,
   HitHighlightRender,
+  StrikeHighlightRender,
   WORLD_WIDTH,
-  TILE_SCALE,
   WORLD_HEIGHT,
+  TILE_SCALE,
   TILE_SIZE,
+  getUi,
+  getPlayerFighter,
+  getWorld,
 } from './components.js';
 import {
   createEnemyWarrior,
@@ -32,9 +38,11 @@ import {
   getSwarmEntity,
 } from './entities.js';
 import { colors, draw, ANIMATIONS } from './draw.js';
-import { distance } from './utils.js';
+import { getDistance, boxesOverlap } from './utils.js';
 
 const WALKING_SPEED = 2;
+const SHARD_DURATION = 2000;
+const STUN_DURATION = 2500;
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Input(ecs) {
@@ -59,18 +67,24 @@ function Input(ecs) {
   const handleKeyUpdate = (player, physics, hp) => {
     const playerEntity = getPlayerEntity(ecs);
 
-    if (playerEntity.components.Stunnable?.isStunned || hp) {
+    /* If the player is stunned, accept no inputs (except pause) */
+    if (
+      playerEntity.get(Stunnable)?.isStunned ||
+      !playerEntity.get(HitPoints).current
+    ) {
       return;
     }
 
     if (player.keys.ArrowLeft || player.keys.a) {
+      const physics = playerEntity.get(PhysicsBody);
       physics.facingLeft = true;
-      physics.vx = WALKING_SPEED;
+      playerEntity.get(Movement).intendsToMove = true;
     }
 
     if (player.keys.ArrowRight || player.keys.d) {
+      const physics = playerEntity.get(PhysicsBody);
       physics.facingLeft = false;
-      physics.vx = -WALKING_SPEED;
+      playerEntity.get(Movement).intendsToMove = true;
     }
 
     if (player.keys.ArrowUp || player.keys.w) {
@@ -106,6 +120,7 @@ function Input(ecs) {
       player.keys[key] = true;
     });
 
+    // TODO: figure out why keysUp are cleared here
     keysUp.forEach((key) => {
       player.keys[key] = false;
     });
@@ -114,6 +129,7 @@ function Input(ecs) {
       handleKeyUpdate(player, physics, hp);
     }
 
+    // TODO: Add keystroke logger
     console.log(`keysDown: ${keysDown}`);
 
     if (keysUp.length) {
@@ -130,19 +146,11 @@ function Input(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function EnemySpawner(ecs) {
-  const player = getPlayerEntity(ecs).get(Player);
-  this.iterate = () => {
-    if (!player.gameStarted) {
-      return;
-    }
-    /** @type {Swarm} */
+  this.update = () => {
     const swarm = getSwarmEntity(ecs).get(Swarm);
-
     if (swarm.waveTimer.isComplete()) {
-      for (let i = 0; i < swarm.waveNumber + 5; i += 2) {
-        let { x } = player.PhysicsBody;
-        x = i % 2 === 0 ? x - 10 : x + 10;
-        createEnemyWarrior(x, 20);
+      for (let i = 0; i < swarm.waveCount + 5; i++) {
+        swarm.enemies.push(createEnemyWarrior());
       }
     }
   };
@@ -150,169 +158,129 @@ function EnemySpawner(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DistributeDeathShards(ecs) {
-  const selector = ecs.select(Swarm, Shardable);
-
-  this.iterate = (entity) => {
-    if (entity.Shardable.timeToNextShard.isComplete()) {
-      entity.Shardable.shardCount += 1;
-      entity.Shardable.hasShards = true;
-    }
+  this.update = () => {
+    ecs.select(Shardable).iterate((entity) => {
+      const shardable = entity.get(Shardable);
+      if (shardable.shardTimer.isComplete()) {
+        shardable.count += 1;
+        shardable.shardTimer.start(SHARD_DURATION);
+      }
+    });
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Stunning(ecs) {
-  const selector = ecs.select(Stunnable);
-
-  this.iterate = (entity) => {
-    if (entity.Stunnable.isStunned && entity.Stunnable.cooldown.isComplete()) {
-      entity.Stunnable.isStunned = false;
-    }
+  this.update = () => {
+    ecs.select(Stunnable).iterate((entity) => {
+      const stunnable = entity.get(Stunnable);
+      if (!stunnable.isStunned && stunnable.shouldBeStunned) {
+        stunnable.isStunned = true;
+        stunnable.stunTimer.start(STUN_DURATION);
+      }
+      if (stunnable.isStunned && stunnable.stunTimer.isComplete()) {
+        stunnable.isStunned = false;
+      }
+    });
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function EnemyAI(ecs) {}
+function EnemyAI(ecs) {
+  this.update = () => {
+    const playerFighter = getPlayerFighter();
+    const { x: pX, y: pY } = playerFighter.get(PhysicsBody);
+    ecs.select(Ai).iterate((entity) => {
+      const { x: eX, y: eY } = entity.get(PhysicsBody);
+      const enemyWarrior = entity.get(Warrior); // TODO: Account for ranged units
+      const distance = getDistance(pX, pY, eX, eY);
+      if (distance > enemyWarrior.threatRange) {
+        enemyWarrior.get(Movement).intendsToMove = true; // TODO: Fix this
+      } else {
+        enemyWarrior.get(Striking).intendsToAttack = true;
+      }
+    });
+    // Try to strike - 75%
+    // Try to deflect - 25%
+    // Fleeing?
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DashHandler(ecs) {
-  const selector = ecs.select(Dashing);
-
-  this.iterate = (entity) => {
-    let { intendsToAct, canAct, isActing, cooldown, duration } = entity.Dashing;
-    if (!isActing && cooldown.isComplete()) {
-      canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - dashing
-      isActing = true;
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      canAct = false;
-      cooldown.start();
-    }
+  this.update = () => {
+    ecs.select(Dashing).iterate((entity) => {
+      if (entity.get(Dashing).intendsToDash) {
+        // Dash
+      }
+    });
+    // Select all units which can dash
+    // If they intend to dash, change the animation state and add X velocity and opposing X acceleration
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function DeflectionHandler(ecs) {
-  const selector = ecs.select(Deflecting);
-
-  this.iterate = (entity) => {
-    let { intendsToAct, canAct, isActing, cooldown, duration } =
-      entity.Deflection;
-    if (!isActing && cooldown.isComplete()) {
-      canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - deflecting
-      isActing = true;
-      // Collision detection
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      canAct = false;
-      cooldown.start();
-    }
+  this.update = () => {
+    ecs.select(Deflecting).iterate((entity) => {});
+    // Select all units which can deflect
+    // If they intend to deflect, change animation state and set deflecting
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function BashHandler(ecs) {
-  const selector = ecs.select(Bashing);
-
-  this.iterate = (entity) => {
-    const { intendsToAct, canAct, isActing, cooldown, duration } =
-      entity.Bashing;
-    if (!isActing && cooldown.isComplete()) {
-      entity.Bashing.canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - deflecting
-      entity.Bashing.isActing = true;
-      // Collision detection
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      entity.Bashing.canAct = false;
-      cooldown.start();
-    }
+  this.update = () => {
+    ecs.select(Bashing).iterate((entity) => {});
+    // Select all entities that can bash
+    // If they intend to bash, set animState and set bashing
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function StrikeHandler(ecs) {
-  const selector = ecs.select(Striking);
-
-  this.iterate = (entity) => {
-    const { intendsToAct, canAct, isActing, cooldown, duration } =
-      entity.Striking;
-    if (!isActing && cooldown.isComplete()) {
-      entity.Striking.canAct = true;
-    }
-    if (!canAct && intendsToAct) {
-      // handleAnimation - striking
-      entity.Striking.isActing = true;
-      // Collision detection
-      duration.start();
-    }
-    if (isActing && duration.isComplete()) {
-      entity.Striking.canAct = false;
-      cooldown.start();
-    }
+  this.update = () => {
+    ecs.select(Striking).iterate((entity) => {});
+    // Select all entities that can strike
+    // If they intend to strike, set animState and set striking
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function JumpHandler(ecs) {
-  const selector = ecs.select(Jumping);
-
-  this.iterate = (entity) => {
-    const { intendsToAct, actionCap, actionUses, cooldown, duration } =
-      entity.Jumping;
-    if (entity.PhysicsBody.y < 1) {
-      entity.actionCap = 0;
-    }
-    if (actionUses < actionCap && intendsToAct) {
-      entity.actionUses += 1;
-      duration.start();
-    }
-    if (actionUses && duration.isComplete()) {
-      entity.actionCap = false;
-      cooldown.start();
-    }
+  this.update = () => {
+    ecs.select(Jumping).iterate((entity) => {});
+    // Select all entities that can strike
+    // If they intend to strike, set animState and set striking
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function Movement(ecs) {
-  const selector = ecs.select(PhysicsBody);
-
-  this.iterate = (entity) => {
-    const physics = entity.get(PhysicsBody);
-
-    const frameRatio = draw.fm;
-    physics.x += physics.vx * frameRatio;
-    physics.y += physics.vy * frameRatio;
-
-    // check ground collision
-    physics.ay = 0.0;
+  this.update = () => {
+    ecs.select(PhysicsBody).iterate((entity) => {});
+    // Select all entities with physicsBody
+    // If an entity is not moving and intends to move, set animState and velocity
+    // If the entity is moving and does not intend to move, reset animState and velocity
+    // If the entity is moving and intends to move, do nothing
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function AttackingHighlightFlipper(ecs) {}
+function AttackingHighlightFlipper(ecs) {
+  this.update = () => {
+    ecs.select(Striking, StrikeHighlightRender).iterate((entity) => {});
+    // Select all entities that can be highlighted and attack
+    // If the entity is attacking, flip their color scheme to the corresponding inversion
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
 function HitHighlightFlipper(ecs) {
-  const selector = ecs.select(Renderable, HitHighlightFlipper);
-
-  this.iterate = (entity) => {
-    const renderable = entity.get(Renderable);
-    const h = entity.get(HitHighlightRender);
-
-    renderable.highlighted = !h.sprTimer.isComplete();
+  this.update = () => {
+    ecs.select(HitHighlightRender).iterate((entity) => {});
+    // Select all entities that can be highlighted and hit
+    // If the entity is hit, flip their color scheme to the corresponding inversion
   };
 }
 
@@ -354,161 +322,104 @@ function CameraMover(ecs) {
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderActors(ecs) {
-  let renderList = [];
-
-  /**
-   * @param {{entity, z}[]} arr
-   * @param {{entity, z}} val
-   */
-  function addAndSort(arr, val) {
-    arr.push(val);
-    for (let i = arr.length - 1; i > 0 && arr[i].z < arr[i - 1].z; i--) {
-      const tmp = arr[i];
-      arr[i] = arr[i - 1];
-      arr[i - 1] = tmp;
-    }
-  }
-
-  /** @param {Entity} entity */
-  const drawEntity = (entity) => {
-    /** @type {PhysicsBody} */
-    const { x, y } = entity.get(PhysicsBody);
-    /** @type {Striking} */
-    const { isActing: isStriking } = entity.get(Striking);
-    /** @type {Renderable} */
-    const renderable = entity.get(Renderable);
-    console.log(`renderable: ${JSON.stringify(renderable)}`);
-    const {
-      spriteName,
-      spriteSetName,
-      timeToNextSprite,
-      animation,
-      currentSpriteIdx,
-      opacity,
-      scale,
-      flipped,
-      highlighted,
-    } = renderable;
-
-    const animationSprites =
-      ANIMATIONS[`${spriteSetName}_ANIMATIONS`][animation][0];
-
-    if (timeToNextSprite.isComplete()) {
-      renderable.currentSpriteIdx++;
-      if (renderable.currentSpriteIdx > animationSprites.length) {
-        renderable.spriteName = 'STANDING';
-        renderable.currentSpriteIdx = 0;
-      } else {
-        renderable.timeToNextSprite.start(
-          ANIMATIONS[`${spriteSetName}_ANIMATIONS`][animation][1][
-            currentSpriteIdx
-          ]
-        );
-      }
-    }
-
-    let spritePostFix = '';
-    if (flipped) {
-      spritePostFix += '_f';
-    }
-    if (highlighted) {
-      spritePostFix += '_h';
-    }
-    if (isStriking) {
-      spritePostFix += '_a';
-    }
-
-    draw.setOpacity(opacity);
-    if (spriteName) {
-      const idx = animationSprites[renderable.currentSpriteIdx];
-      const spriteId = spriteName + idx + spritePostFix;
-      console.log(`spriteId: ${spriteId}`);
-      draw.drawSprite(spriteName + idx + spritePostFix, x, y, 0, scale);
-    }
-    draw.setOpacity(1);
-  };
-
-  /** @param {Entity} entity */
-  const addToRenderList = (entity) => {
-    /** @type {Renderable} */
-    const renderable = entity.get(Renderable);
-    addAndSort(renderList, {
-      entity,
-      z: renderable.z,
-    });
-  };
-
-  const isOffscreen = (x, y, x2, y2, w, h) => {
-    distance(x + w / 2, y + h / 2, x2, y2) < draw.SCREEN_WIDTH / 2 + 160;
-  };
-
-  /** @param {Entity} entity */
-  const drawRelativeToCamera = (entity) => {
-    /** @type {Camera} */
-    const { x, y, w, h } = entity.get(Camera);
-    const ctx = draw.getCtx();
-    ctx.save();
-    ctx.translate(-x, -y);
-    for (const { entity } of renderList) {
-      const { x: x2, y: y2 } = entity.get(PhysicsBody);
-      if (!isOffscreen(x, y, x2, y2, w, h)) {
-        drawEntity(entity);
-      } else {
-        console.log('it is offscreen');
-      }
-    }
-  };
-
   this.update = () => {
-    const sprites = ecs.select(PhysicsBody, Renderable);
-    console.log(`sprites: ${JSON.stringify(sprites)}`);
-    const camera = ecs.select(Camera);
-    console.log(`camera: ${camera}`);
-    sprites.iterate(addToRenderList);
-    camera.iterate(drawRelativeToCamera);
+    // Select all renderables
+    ecs.select(Renderable).iterate((entity) => {});
+    // Draw all renderables according to their animation state and position
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
 function RenderUI(ecs) {
-  this.update = () => {};
+  this.update = () => {
+    const ui = getUi();
+    // renderUi(ui);
+    // Get the UI
+    // Render it
+  };
 }
 
 function RenderWorld(ecs) {
   this.update = () => {
-    console.log('Rendering world...');
-    const ctx = draw.getCtx();
-    const world = getWorldEntity(ecs).get(World);
-    for (let i = 0; i < world.height; i++) {
-      for (let j = 0; j < world.width; j++) {
-        const tile = world.tiles[i * world.width + j];
-        let color = tile === 1 ? colors.BLACK : colors.WHITE;
-        const t = TILE_SIZE * TILE_SCALE;
-        const x = j * TILE_SIZE;
-        const y = i * TILE_SIZE;
-        draw.drawRect(x, y, t, t, color, false, ctx);
-      }
-    }
+    const world = getWorld();
+    // renderWorld(world);
+    // Get the world
+    // Render it
   };
 }
 
 /** @param {import('./ecs.js').ECS} ecs */
-function LimitedLifetimeUpdater(ecs) {}
+function LimitedLifetimeUpdater(ecs) {
+  this.update = () => {
+    ecs.select(LimitedLifetime).iterate((entity) => {
+      if (entity.get(LimitedLifetime).timer.isComplete()) {
+        entity.eject();
+      }
+    });
+    // Select all entities with limitedLifetime
+    // If the lifetime has expired, delete it.
+  };
+}
 
 /** @param {import('./ecs.js').ECS} ecs */
-function HitPointUpdater(ecs) {}
+function HitPointUpdater(ecs) {
+  this.update = () => {
+    ecs.select(HitPoints).iterate((entity) => {
+      const { damage, current } = entity.get(HitPoints);
+      entity.get(HitPoints).current -= damage;
+      if (current <= 0) {
+        entity.get(HitPoints).shouldDie = true;
+      }
+    });
+  };
+}
 
-function CheckTileCollisions(ecs) {}
+/** @param {import('./ecs.js').E
+ * new EnforceTileCollisions(ecs),CS} ecs */
+function EnforceHitboxes(ecs) {
+  this.update = () => {
+    ecs.select(Hitbox).iterate((hitEntity) => {
+      ecs.select(Hurtbox).iterate((hurtEntity) => {
+        const hitBoxes = hitEntity.get(Hitbox);
+        const hurtBoxes = hurtEntity.get(Hurtbox);
+        hitBoxes.forEach((hitBox) => {
+          const { xStart: x1, xEnd: x2, yStart: y1, yEnd: y2 } = hitBox;
+          const { xStart: x3, xEnd: x4, yStart: y3, yEnd: y4 } = hurtob;
+          if (boxesOverlap(x1, y1, x2, y2, x3, y3, x4, y4)) {
+            // TODO: account for attack knockback
+            // An entity can have HP without a hurtbox (e.g. perfect guard) but not the inverse
+            const damage = hitEntity.get(Damage);
+            let hp = hurtEntity.get(Hp);
+            hp = hp - damage;
+            // If hp is zero, flag for removal
+            // If player hp is zero, game is over
+          }
+        });
+      });
+    });
+    // Select all entities that can deal damage.
+    // Select all entities with physicsBodies.
+    // If there is any overlap between either group, deal damage to the physicsBody entities.
+  };
+}
 
-/** @param {import('./ecs.js').ECS} ecs */
-function CheckCollisions(ecs) {}
+function EnforceTileCollisions(ecs) {
+  this.update = () => {
+    ecs.select(Collision).iterate((collisionEntity) => {
+      ecs.select(PhysicsBody).iterate((physicsEntity) => {});
+    });
+    // Select all tiles with collisions
+    // Select all entities with physics
+    // If the physicsEntities overlap with any of the tiles, set their positions to be outside of the tiles
+  };
+}
 
 export const getSystems = (ecs) => {
   return [
+    // new Stunning(ecs),
     new Input(ecs),
     // new EnemySpawner(ecs),
     // new DistributeDeathShards(ecs),
-    // new Stunning(ecs),
     // new EnemyAI(ecs),
     // new DashHandler(ecs),
     // new DeflectionHandler(ecs),
@@ -519,10 +430,11 @@ export const getSystems = (ecs) => {
     // new AttackingHighlightFlipper(ecs),
     // new HitHighlightFlipper(ecs),
     // new CameraMover(ecs),
-    new RenderActors(ecs),
+    // new RenderActors(ecs),
     // new RenderUI(ecs),
-    new RenderWorld(ecs),
-    // new CheckCollisions(ecs),
+    // new RenderWorld(ecs),
+    // new EnforceTileCollisions(ecs),
+    // new EnforceDamageCollisions(ecs),
     // new LimitedLifetimeUpdater(ecs),
     // new HitPointUpdater(ecs),
   ];

@@ -12,6 +12,7 @@
     "build": "yarn clean && node scripts/build.js"
   },
   "devDependencies": {
+    "advzip-bin": "^2.0.0",
     "eslint": "7.28.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-jsdoc": "^39.3.6",
