@@ -417,7 +417,7 @@ function EnforceTileCollisions(ecs) {
 export const getSystems = (ecs) => {
   return [
     // new Stunning(ecs),
-    new Input(ecs),
+    // new Input(ecs),
     // new EnemySpawner(ecs),
     // new DistributeDeathShards(ecs),
     // new EnemyAI(ecs),
