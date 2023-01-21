@@ -1,6 +1,7 @@
-const WORLD_HEIGHT = 0;
-const WORLD_WIDTH = 0;
-const TILE_SIZE = 0;
+export const WORLD_HEIGHT = 0;
+export const WORLD_WIDTH = 0;
+export const TILE_SIZE = 0;
+export const TILE_SCALE = 0;
 
 const UI = null;
 export const getUi = () => {
@@ -31,6 +32,8 @@ export class Player {}
 export class Ai {}
 export class Camera {}
 export class Collision {}
+export class Hitbox {}
+export class Hurtbox {}
 export class Damaging {}
 export class Damageable {}
 export class HitPoints {}
